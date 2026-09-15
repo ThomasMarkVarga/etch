@@ -1,0 +1,256 @@
+/*
+  Etch design tokens.
+
+  Etch is the fourth app on vibe-coding.fans, and it is built to sit next to
+  PasteSafe, Overlap and BridgeDays rather than to look like a separate
+  product. Those three share an architecture: semantic custom properties on
+  :root, a dark variant under [data-theme="dark"], self-hosted woff2, a 44px
+  touch floor, and one accent hue per app. That architecture is reused here
+  exactly; only the hue and the typeface change.
+
+  The accent is indigo, tied to the showcase landing page's --blue (#3D5AFE)
+  but darkened to indigo-700 so white text on it clears 4.5:1 with room spare
+  (measured: 7.90:1). Green, amber and red are deliberately not used as brand
+  colours, because this app leans on them constantly to mean pass, caution and
+  fail, and a brand that competes with a warning is a brand that hides one.
+
+  IBM Plex is the text face. It was drawn for engineering and technical
+  documentation, which is the register this app is written in, and its mono
+  companion carries the module counts, capacities and IBANs.
+*/
+
+/* --------------------------------------------------------------- fonts -- */
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url('/fonts/ibm-plex-sans-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Romanian needs ă â î ș ț, which live in latin-ext. Loading this subset is
+   not optional for an app whose own test suite is written in Romanian. */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url('/fonts/ibm-plex-sans-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('/fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('/fonts/ibm-plex-mono-latin-ext-500-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+FEFF, U+FFFD;
+}
+
+/* ---------------------------------------------------------------- light -- */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --raised: #edeff3;
+  --sunken: #e6e9ef;
+  --border: #dfe3ea;
+  --border-strong: #b9c0cd;
+
+  --text: #11141a;
+  --text-2: #444c5a;
+  --muted: #545c6b;
+
+  --accent: #4338ca;
+  --accent-hover: #3730a3;
+  --accent-soft: #eef0fe;
+  --accent-line: #c7cbf5;
+  --on-accent: #ffffff;
+
+  --ok: #15803d;
+  --ok-soft: #dcfce7;
+  --ok-line: #86efac;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --warn-line: #fcd34d;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
+  --danger-line: #fca5a5;
+
+  /*
+    The preview surround. It must read as "not paper" in both themes, because
+    a white code on a white page hides the clear border, and the clear border
+    is the single most commonly destroyed part of a printed code.
+  */
+  --canvas: #d7dbe3;
+  --canvas-line: #c3c9d4;
+
+  /*
+    The code itself never follows the theme. What is on screen is what gets
+    printed, and a preview that goes light-on-dark at night would be lying
+    about the file.
+  */
+  --paper-fixed: #ffffff;
+  --ink-fixed: #0b0b0d;
+
+  --shadow-1: 0 1px 2px rgba(17, 20, 26, 0.06);
+  --shadow-2: 0 4px 12px -2px rgba(17, 20, 26, 0.08), 0 1px 3px rgba(17, 20, 26, 0.06);
+  --shadow-3: 0 24px 48px -16px rgba(17, 20, 26, 0.18), 0 2px 6px rgba(17, 20, 26, 0.05);
+
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-21: 1.3125rem;
+  --fs-26: 1.625rem;
+  --fs-32: 2rem;
+  --fs-42: 2.625rem;
+
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: 4rem;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  --target: 44px;
+
+  --fast: 120ms;
+  --base: 200ms;
+  --slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --z-sticky: 10;
+  --z-overlay: 40;
+  --z-toast: 60;
+  --z-skip: 80;
+}
+
+/* ----------------------------------------------------------------- dark -- */
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0e1117;
+  --surface: #161a22;
+  --raised: #1e232d;
+  --sunken: #11151c;
+  --border: #2a303c;
+  --border-strong: #49515f;
+
+  --text: #e8eaf0;
+  --text-2: #b6bdca;
+  --muted: #9aa3b2;
+
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --accent-soft: rgba(129, 140, 248, 0.14);
+  --accent-line: rgba(129, 140, 248, 0.42);
+  --on-accent: #0e1117;
+
+  --ok: #4ade80;
+  --ok-soft: rgba(74, 222, 128, 0.14);
+  --ok-line: rgba(74, 222, 128, 0.4);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.13);
+  --warn-line: rgba(251, 191, 36, 0.4);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --danger-line: rgba(248, 113, 113, 0.42);
+
+  --canvas: #2b313d;
+  --canvas-line: #3b4250;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 6px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 28px 56px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+/*
+  System preference, unless the person has chosen. The manual override writes
+  data-theme, and this block is scoped so that choosing light in a dark OS
+  actually sticks.
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --bg: #0e1117;
+    --surface: #161a22;
+    --raised: #1e232d;
+    --sunken: #11151c;
+    --border: #2a303c;
+    --border-strong: #49515f;
+
+    --text: #e8eaf0;
+    --text-2: #b6bdca;
+    --muted: #9aa3b2;
+
+    --accent: #818cf8;
+    --accent-hover: #a5b4fc;
+    --accent-soft: rgba(129, 140, 248, 0.14);
+    --accent-line: rgba(129, 140, 248, 0.42);
+    --on-accent: #0e1117;
+
+    --ok: #4ade80;
+    --ok-soft: rgba(74, 222, 128, 0.14);
+    --ok-line: rgba(74, 222, 128, 0.4);
+    --warn: #fbbf24;
+    --warn-soft: rgba(251, 191, 36, 0.13);
+    --warn-line: rgba(251, 191, 36, 0.4);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+    --danger-line: rgba(248, 113, 113, 0.42);
+
+    --canvas: #2b313d;
+    --canvas-line: #3b4250;
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 6px 16px -4px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 28px 56px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.02);
+  }
+}

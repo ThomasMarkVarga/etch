@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+@import './styles/tokens.css';
+@import './styles/app.css';
+@import './styles/showcase.css';
+
+/* Tailwind utilities read the same tokens the hand-authored components use, so
+   a utility class and a component class can never disagree about a colour. */
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+}

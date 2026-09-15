@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <title>Etch: a QR code you print once and never have to reprint</title>
+    <meta
+      name="description"
+      content="Free static QR code generator. Your data is encoded into the pattern itself, so the code has no redirect, no account and no subscription to expire. Runs entirely in your browser. SVG, PNG and print-ready PDF at real millimetre sizes."
+    />
+    <link rel="canonical" href="https://etch.vibe-coding.fans/" />
+    <meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e1117" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Etch" />
+    <meta property="og:title" content="Etch: a QR code you print once and never have to reprint" />
+    <meta
+      property="og:description"
+      content="Most free QR generators encode their own short link and redirect to yours. Stop paying and every code you printed dies. Etch encodes your data directly, in your browser."
+    />
+    <meta property="og:url" content="https://etch.vibe-coding.fans/" />
+    <meta property="og:image" content="https://etch.vibe-coding.fans/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="The word Etch beside a QR code, over the line: a QR code you print once and never have to reprint."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Etch: a QR code you print once and never have to reprint" />
+    <meta
+      name="twitter:description"
+      content="Static QR codes with no redirect, no account and nothing to expire. Generated entirely in your browser."
+    />
+    <meta name="twitter:image" content="https://etch.vibe-coding.fans/og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="The word Etch beside a QR code, over the line: a QR code you print once and never have to reprint."
+    />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Self-hosted, same-origin. There is no font CDN here, because an app
+         whose claim is that nothing leaves your browser cannot then phone a
+         third party for a typeface. -->
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex-sans-latin-wght-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex-mono-latin-500-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <script>
+      // Applied before first paint so the page never flashes the wrong theme.
+      // localStorage only, no cookie: nothing here is sent anywhere.
+      (function () {
+        try {
+          var saved = localStorage.getItem('etch-theme');
+          if (saved === 'light' || saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', saved);
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+        } catch (e) {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      })();
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Etch",
+        "url": "https://etch.vibe-coding.fans/",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any browser",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "description": "Static QR code generator that encodes your data directly into the pattern, with no redirect, no account and no subscription. Runs entirely in the browser."
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

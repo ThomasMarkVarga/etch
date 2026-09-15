@@ -1,0 +1,32 @@
+{
+  "name": "etch",
+  "version": "1.0.0",
+  "description": "A QR code you print once and never have to reprint. Static QR codes generated entirely in your browser.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/make-og.mjs && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "jsqr": "^1.4.0",
+    "jszip": "^3.10.1",
+    "pdf-lib": "^1.17.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "bootstrap-icons": "^1.13.1",
+    "tailwindcss": "^4.3.3",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}

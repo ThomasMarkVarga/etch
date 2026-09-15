@@ -1,0 +1,21 @@
+# A content security policy that enforces the promise this app makes.
+# connect-src 'self' is the key line: the page can reach this origin and
+# nothing else, so if a future change ever tried to phone home, the browser
+# would block it rather than the claim quietly becoming false. It is 'self'
+# rather than 'none' because the service worker has to fetch same-origin
+# assets in order to cache them for offline use.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/sw.js
+  Cache-Control: no-cache

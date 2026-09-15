@@ -1,0 +1,14 @@
+{
+  "name": "Etch, static QR codes",
+  "short_name": "Etch",
+  "description": "A QR code you print once and never have to reprint. Static QR codes generated entirely in your browser.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#4338ca",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

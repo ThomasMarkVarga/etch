@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vite/
+
+# Generated at build time
+public/og.png
+
+# Local scratch, never committed
+.scratch/
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs and env
+npm-debug.log*
+yarn-error.log*
+*.local
+.env
+.env.*
+!.env.example
+
+# Test output
+coverage/
