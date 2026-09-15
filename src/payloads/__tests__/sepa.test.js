@@ -27,19 +27,19 @@ describe('IBAN validation uses the checksum, not a regex', () => {
   ];
 
   for (const [iban, country] of VALID) {
-    it(`accepts a valid ${country} IBAN`, () => {
+    it(`accepts a valid ${country} IBAN`, async () => {
       const check = validateIban(iban);
       expect(check.valid, `${iban} should be valid`).toBe(true);
       expect(check.country).toBe(country);
     });
   }
 
-  it('accepts an IBAN with the usual spacing', () => {
+  it('accepts an IBAN with the usual spacing', async () => {
     expect(validateIban('RO49 AAAA 1B31 0075 9384 0000').valid).toBe(true);
     expect(normaliseIban('ro49 aaaa 1b31 0075 9384 0000')).toBe('RO49AAAA1B31007593840000');
   });
 
-  it('rejects a single transposed character, which a regex would allow', () => {
+  it('rejects a single transposed character, which a regex would allow', async () => {
     // Same length, same shape, same country: only the checksum catches this.
     const good = 'DE89370400440532013000';
     const typo = 'DE89370400440532013100';
@@ -49,19 +49,19 @@ describe('IBAN validation uses the checksum, not a regex', () => {
     expect(bad.reason).toBe('checksum');
   });
 
-  it('rejects wrong check digits', () => {
+  it('rejects wrong check digits', async () => {
     expect(validateIban('RO50AAAA1B31007593840000').reason).toBe('checksum');
   });
 
-  it('rejects the wrong length for the country', () => {
+  it('rejects the wrong length for the country', async () => {
     expect(validateIban('DE8937040044053201300').reason).toBe('length');
   });
 
-  it('rejects an unknown country code', () => {
+  it('rejects an unknown country code', async () => {
     expect(validateIban('ZZ89370400440532013000').reason).toBe('country');
   });
 
-  it('rejects malformed input', () => {
+  it('rejects malformed input', async () => {
     expect(validateIban('').reason).toBe('empty');
     expect(validateIban('not an iban').reason).toBe('shape');
     expect(validateIban('1234567890').reason).toBe('shape');
@@ -69,7 +69,7 @@ describe('IBAN validation uses the checksum, not a regex', () => {
 });
 
 describe('field order is exact', () => {
-  it('writes the twelve fields in the order the specification defines', () => {
+  it('writes the twelve fields in the order the specification defines', async () => {
     const payload = buildSepa({
       name: 'Atelier Lemn SRL',
       iban: 'RO49AAAA1B31007593840000',
@@ -92,7 +92,7 @@ describe('field order is exact', () => {
     expect(lines[10]).toBe('Factura 2026-114');
   });
 
-  it('keeps empty fields in the middle rather than collapsing them', () => {
+  it('keeps empty fields in the middle rather than collapsing them', async () => {
     // This is the failure that matters: dropping the empty BIC line would move
     // the name into the BIC slot and the IBAN into the name slot.
     const payload = buildSepa({
@@ -110,12 +110,12 @@ describe('field order is exact', () => {
     expect(lines[10]).toBe('Ref');
   });
 
-  it('uses LF line endings, not CRLF', () => {
+  it('uses LF line endings, not CRLF', async () => {
     const payload = buildSepa({ name: 'A', iban: 'RO49AAAA1B31007593840000' });
     expect(payload).not.toContain('\r');
   });
 
-  it('formats the amount with the EUR prefix and two decimals', () => {
+  it('formats the amount with the EUR prefix and two decimals', async () => {
     // A remittance keeps the amount from being a trailing field, so the line is
     // always present and position 7 is always the amount.
     const amount = (v) =>
@@ -127,7 +127,7 @@ describe('field order is exact', () => {
     expect(amount(0)).toBe('');
   });
 
-  it('omits trailing empty fields, which the specification permits', () => {
+  it('omits trailing empty fields, which the specification permits', async () => {
     // Trailing only. An empty field with a populated field after it must stay,
     // because dropping one would shift every field below it by a line.
     const bare = buildSepa({ name: 'A', iban: 'RO49AAAA1B31007593840000' });
@@ -138,7 +138,7 @@ describe('field order is exact', () => {
     expect(withNote.split('\n')[7]).toBe('');
   });
 
-  it('uses the structured reference and drops the free-text note when both are set', () => {
+  it('uses the structured reference and drops the free-text note when both are set', async () => {
     const payload = buildSepa({
       name: 'A',
       iban: 'RO49AAAA1B31007593840000',
@@ -155,45 +155,45 @@ describe('field order is exact', () => {
 describe('validation', () => {
   const base = { name: 'Atelier Lemn SRL', iban: 'RO49AAAA1B31007593840000', version: '002' };
 
-  it('accepts a well-formed payment', () => {
+  it('accepts a well-formed payment', async () => {
     expect(validateSepa({ ...base, amount: '149.50' }).filter((i) => i.level === 'error')).toEqual([]);
   });
 
-  it('requires a beneficiary name', () => {
+  it('requires a beneficiary name', async () => {
     expect(validateSepa({ ...base, name: '' }).some((i) => i.field === 'name' && i.level === 'error')).toBe(true);
   });
 
-  it('caps the name at 70 characters', () => {
+  it('caps the name at 70 characters', async () => {
     expect(validateSepa({ ...base, name: 'x'.repeat(71) }).some((i) => i.field === 'name' && i.level === 'error')).toBe(true);
   });
 
-  it('explains a failed checksum in plain language', () => {
+  it('explains a failed checksum in plain language', async () => {
     const issue = validateSepa({ ...base, iban: 'RO50AAAA1B31007593840000' }).find((i) => i.field === 'iban');
     expect(issue?.level).toBe('error');
     expect(issue?.message).toMatch(/check digits/i);
   });
 
-  it('requires a BIC for version 001 but not for 002', () => {
+  it('requires a BIC for version 001 but not for 002', async () => {
     expect(validateSepa({ ...base, version: '001', bic: '' }).some((i) => i.field === 'bic' && i.level === 'error')).toBe(true);
     expect(validateSepa({ ...base, version: '002', bic: '' }).some((i) => i.field === 'bic' && i.level === 'error')).toBe(false);
   });
 
-  it('rejects a malformed BIC', () => {
+  it('rejects a malformed BIC', async () => {
     expect(validateSepa({ ...base, bic: 'NOTABIC1' }).some((i) => i.field === 'bic' && i.level === 'error')).toBe(false);
     expect(validateSepa({ ...base, bic: 'SHORT' }).some((i) => i.field === 'bic' && i.level === 'error')).toBe(true);
   });
 
-  it('rejects an amount over the format maximum', () => {
+  it('rejects an amount over the format maximum', async () => {
     expect(validateSepa({ ...base, amount: '1000000000' }).some((i) => i.field === 'amount' && i.level === 'error')).toBe(true);
   });
 
-  it('rejects a note over 140 characters', () => {
+  it('rejects a note over 140 characters', async () => {
     expect(
       validateSepa({ ...base, remittance: 'x'.repeat(141) }).some((i) => i.field === 'remittance' && i.level === 'error'),
     ).toBe(true);
   });
 
-  it('rejects a payload over the 331 byte limit', () => {
+  it('rejects a payload over the 331 byte limit', async () => {
     const issues = validateSepa({ ...base, name: 'ă'.repeat(70), remittance: 'ș'.repeat(140), reference: '' });
     const size = new TextEncoder().encode(buildSepa({ ...base, name: 'ă'.repeat(70), remittance: 'ș'.repeat(140) })).length;
     expect(size).toBeGreaterThan(SEPA_MAX_BYTES);
@@ -202,7 +202,7 @@ describe('validation', () => {
 });
 
 describe('round trip', () => {
-  it('a payment code decodes back byte for byte', () => {
+  it('a payment code decodes back byte for byte', async () => {
     const payload = buildSepa({
       name: 'Atelier Lemn și Piatră',
       iban: 'RO49AAAA1B31007593840000',
@@ -210,12 +210,12 @@ describe('round trip', () => {
       remittance: 'Factura 2026-114',
     });
     const result = encode(payload, { ecc: 'M' });
-    const check = verify(result.matrix, result.version, payload);
+    const check = await verify(result.matrix, result.version, payload);
     expect(check.pass).toBe(true);
     for (const c of check.conditions) expect(c.got).toBe(payload);
   });
 
-  it('stays inside the size limit at the maximum realistic content', () => {
+  it('stays inside the size limit at the maximum realistic content', async () => {
     const payload = buildSepa({
       name: 'A'.repeat(70),
       iban: 'RO49AAAA1B31007593840000',

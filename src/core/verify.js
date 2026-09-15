@@ -12,8 +12,34 @@
  * plainly in the interface rather than buried.
  */
 
-import jsQR from 'jsqr';
 import { rasterize } from './render/rasterize.js';
+
+/**
+ * jsQR is loaded on demand.
+ *
+ * It is about 47KB gzipped, which is a third of the whole initial-load budget,
+ * and nothing on screen needs it until the first verification runs. Since
+ * verification is debounced by a quarter of a second anyway, fetching the
+ * decoder in that window costs nothing a user can perceive and keeps it off the
+ * critical path to first paint.
+ */
+let decoderPromise = null;
+
+/** @returns {Promise<(d: Uint8ClampedArray, w: number, h: number, o?: object) => {data: string}|null>} */
+function loadDecoder() {
+  if (!decoderPromise) decoderPromise = import('jsqr').then((m) => m.default);
+  return decoderPromise;
+}
+
+/**
+ * Start fetching the decoder without waiting for it, so the first verification
+ * does not also pay for the download.
+ */
+export function warmDecoder() {
+  loadDecoder().catch(() => {
+    decoderPromise = null;
+  });
+}
 
 /**
  * @typedef {object} Condition
@@ -191,10 +217,11 @@ function addNoise(data, amplitude, seed) {
  * @param {object} [options]
  * @param {import('./style.js').StyleSpec} [options.style]
  * @param {Condition[]} [options.conditions]
- * @returns {VerifyResult}
+ * @returns {Promise<VerifyResult>}
  */
-export function verify(matrix, version, expected, options = {}) {
+export async function verify(matrix, version, expected, options = {}) {
   const started = Date.now();
+  const jsQR = await loadDecoder();
   const conditions = options.conditions ?? CONDITIONS;
   /** @type {ConditionResult[]} */
   const results = [];
@@ -243,9 +270,9 @@ export function verify(matrix, version, expected, options = {}) {
  * @param {number} version
  * @param {string} expected
  * @param {import('./style.js').StyleSpec} style
- * @returns {{culprit: string, label: string, revert: Partial<import('./style.js').StyleSpec>}|null}
+ * @returns {Promise<{culprit: string, label: string, revert: Partial<import('./style.js').StyleSpec>}|null>}
  */
-export function findStyleCulprit(matrix, version, expected, style) {
+export async function findStyleCulprit(matrix, version, expected, style) {
   /** @type {{key: string, label: string, revert: Partial<import('./style.js').StyleSpec>}[]} */
   const suspects = [];
 
@@ -262,7 +289,7 @@ export function findStyleCulprit(matrix, version, expected, style) {
   }
 
   for (const s of suspects) {
-    const r = verify(matrix, version, expected, { style: { ...style, ...s.revert } });
+    const r = await verify(matrix, version, expected, { style: { ...style, ...s.revert } });
     if (r.pass) return { culprit: s.key, label: s.label, revert: s.revert };
   }
   return null;

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { tryEncode, headroom, suggestShrinks, naturalVersion } from '../core/encode.js';
 import { matrixToSvg } from '../core/render/matrixToSvg.js';
 import { normaliseStyle, checkContrast, checkLogo, eccForLogo } from '../core/style.js';
-import { verify, findStyleCulprit } from '../core/verify.js';
+import { verify, findStyleCulprit, warmDecoder } from '../core/verify.js';
 import { buildPayload, validatePayload, payloadType } from '../payloads/index.js';
 
 /**
@@ -15,6 +15,10 @@ import { buildPayload, validatePayload, payloadType } from '../payloads/index.js
  */
 
 const VERIFY_DEBOUNCE_MS = 260;
+
+// Begin fetching the decoder as soon as this module is evaluated, so it is
+// already in place by the time the first payload is typed.
+warmDecoder();
 
 /**
  * @param {object} args
@@ -97,16 +101,19 @@ export function useEtch({ typeId, input, encoding, style: rawStyle }) {
     const timer = setTimeout(() => {
       // Yield to the browser first, so a long verification never blocks the
       // keystroke that triggered it from painting.
-      const run = () => {
+      const run = async () => {
         if (runId.current !== id) return;
-        const v = verify(result.matrix, result.version, result.text, { style });
+        const v = await verify(result.matrix, result.version, result.text, { style });
+        // A newer run started while this one was decoding, so its answer is the
+        // one that belongs on screen.
         if (runId.current !== id) return;
         setVerification(v);
-        setCulprit(v.pass ? null : findStyleCulprit(result.matrix, result.version, result.text, style));
+        setCulprit(v.pass ? null : await findStyleCulprit(result.matrix, result.version, result.text, style));
+        if (runId.current !== id) return;
         setVerifying(false);
       };
-      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
-      else run();
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => void run());
+      else void run();
     }, VERIFY_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);

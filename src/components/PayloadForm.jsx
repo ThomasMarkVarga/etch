@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { PAYLOAD_TYPES } from '../payloads/index.js';
 import { WIFI_AUTH, WPA3_NOTE } from '../payloads/wifi.js';
 import { CONTACT_FORMAT_HELP } from '../payloads/vcard.js';
@@ -60,11 +61,30 @@ function Text({ id, value, onChange, error, hint, mono, type = 'text', ...rest }
  * @param {{field: string, level: string, message: string}[]} props.issues
  */
 export default function PayloadForm({ typeId, input, onChange, onTypeChange, issues }) {
-  const errorFor = (field) => issues.find((i) => i.field === field && i.level === 'error')?.message;
-  const set = (field) => (value) => onChange({ [field]: value });
+  /*
+    Nothing is marked wrong until the person has actually had a go at it.
+    An empty form that greets you with "Enter the address" in red is telling
+    you off for not having typed yet, and it trains people to ignore the red,
+    which is exactly when you need them not to.
+
+    Touched means: they have typed, or they have left a field, or the form
+    arrived already filled in from a shared link.
+  */
+  const prefilled = Object.values(input ?? {}).some((v) => v !== '' && v !== undefined && v !== null && v !== false);
+  const [touched, setTouched] = useState(prefilled);
+
+  // Switching payload type starts the new form clean.
+  useEffect(() => setTouched(prefilled), [typeId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const visibleIssues = touched ? issues : [];
+  const errorFor = (field) => visibleIssues.find((i) => i.field === field && i.level === 'error')?.message;
+  const set = (field) => (value) => {
+    setTouched(true);
+    onChange({ [field]: value });
+  };
 
   return (
-    <div className="stack">
+    <div className="stack" onBlur={() => setTouched(true)}>
       <div className="field">
         <span className="label" id="type-label">
           What should the code do?
@@ -103,7 +123,7 @@ export default function PayloadForm({ typeId, input, onChange, onTypeChange, iss
 
       <Fields typeId={typeId} input={input} set={set} errorFor={errorFor} onChange={onChange} />
 
-      {issues
+      {visibleIssues
         .filter((i) => i.level === 'warning')
         .map((i, n) => (
           <Notice key={`${i.field}-${n}`} kind={noticeKind(i.level)}>

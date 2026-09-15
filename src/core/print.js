@@ -249,9 +249,9 @@ export const SURFACE_WARNINGS = [
  * @type {{id: string, label: string, widthMm: number, distanceMm: number}[]}
  */
 export const PRINT_PRESETS = [
-  { id: 'card', label: 'Business card', widthMm: 22, distanceMm: 200 },
-  { id: 'menu', label: 'Menu or flyer', widthMm: 30, distanceMm: 300 },
-  { id: 'label', label: 'Product label', widthMm: 25, distanceMm: 250 },
+  { id: 'card', label: 'Business card', widthMm: 25, distanceMm: 200 },
+  { id: 'menu', label: 'Menu or flyer', widthMm: 35, distanceMm: 300 },
+  { id: 'label', label: 'Product label', widthMm: 30, distanceMm: 250 },
   { id: 'tableTalker', label: 'Table sign', widthMm: 50, distanceMm: 500 },
   { id: 'poster', label: 'Poster, arm’s length', widthMm: 80, distanceMm: 800 },
   { id: 'window', label: 'Shop window', widthMm: 150, distanceMm: 1500 },

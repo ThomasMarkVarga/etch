@@ -100,7 +100,7 @@ export default function BatchMode({ encoding, style }) {
               idPrefix: `etch-${j}`,
             });
 
-            const check = verify(result.matrix, result.version, text, { style });
+            const check = await verify(result.matrix, result.version, text, { style });
             if (!check.pass) {
               failures.push({
                 row: rowNumber,

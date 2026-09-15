@@ -1,87 +1,81 @@
-import Icon from './Icon.jsx';
-
 /**
- * Footer: source, licence, and credit where the hard parts came from.
+ * Footer.
  *
- * The encoding library credit is not a formality. Writing a QR encoder from
- * scratch would have been a worse decision than using the reference
- * implementation, and saying so is part of being honest about what this app is.
+ * Deliberately the same shape as the other vibe-coding.fans apps: the pink
+ * pill linking home, then small print in prose rather than a list. PasteSafe,
+ * Overlap and BridgeDays all do exactly this, and a visitor arriving from the
+ * wall should land somewhere that feels like the same place.
+ *
+ * The credits are not a formality. Writing a QR encoder from scratch would
+ * have been a worse decision than using the reference implementation, and
+ * saying whose work this is built on is part of being honest about that.
  */
 
-const CREDITS = [
-  {
-    name: 'qrcodegen',
-    by: 'Project Nayuki',
-    url: 'https://www.nayuki.io/page/qr-code-generator-library',
-    licence: 'MIT',
-    what: 'the encoder itself, the part that turns bytes into a correct pattern',
-  },
-  {
-    name: 'jsQR',
-    by: 'Cosmo Wolfe',
-    url: 'https://github.com/cozmo/jsQR',
-    licence: 'Apache 2.0',
-    what: 'the decoder that reads every code back to check it',
-  },
-  {
-    name: 'pdf-lib',
-    by: 'Andrew Dillon',
-    url: 'https://pdf-lib.js.org/',
-    licence: 'MIT',
-    what: 'the print-ready PDF export',
-  },
-  { name: 'JSZip', by: 'Stuart Knightley', url: 'https://stuk.github.io/jszip/', licence: 'MIT', what: 'batch downloads' },
-  {
-    name: 'Bootstrap Icons',
-    by: 'The Bootstrap Authors',
-    url: 'https://icons.getbootstrap.com/',
-    licence: 'MIT',
-    what: 'the icons',
-  },
-  { name: 'IBM Plex', by: 'IBM', url: 'https://www.ibm.com/plex/', licence: 'SIL OFL 1.1', what: 'the typeface' },
-];
+/** The vibe-coding.fans mark, as the sibling apps embed it. */
+function VcfMark() {
+  return (
+    <svg viewBox="0 0 66 66" width="30" height="30" aria-hidden="true" focusable="false">
+      <rect x="6" y="6" width="58" height="58" rx="16" fill="#0B0B0F" />
+      <rect x="2" y="2" width="54" height="54" rx="14" fill="#FF4FA3" stroke="#0B0B0F" strokeWidth="4" />
+      <path
+        d="M26 18 13 29l13 11M33 18h7.5a5.5 5.5 0 0 1 0 11H36m4.5 0a5.5 5.5 0 0 1 0 11H33"
+        fill="none"
+        stroke="#0B0B0F"
+        strokeWidth="6.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+const SOURCE = 'https://github.com/ThomasMarkVarga/etch';
 
 export default function SiteFooter() {
   return (
-    <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
-      <div className="shell" style={{ paddingBlock: 'var(--s-6)' }}>
-        <div className="grid-2" style={{ alignItems: 'start', gap: 'var(--s-6)' }}>
-          <div>
-            <p style={{ fontWeight: 700, fontSize: 'var(--fs-18)', letterSpacing: '-0.02em' }}>Etch</p>
-            <p className="hint" style={{ maxWidth: '30rem', marginTop: 'var(--s-2)' }}>
-              A static QR code generator. Free, with no account, no watermark, no export limit and no paid tier,
-              because there is no running cost to cover: once the page has loaded, there is no server involved in
-              anything you do here.
-            </p>
-            <div className="row" style={{ marginTop: 'var(--s-4)', gap: 'var(--s-2)' }}>
-              <a className="btn btn-sm" href="https://github.com/ThomasMarkVarga/etch" target="_blank" rel="noopener">
-                <Icon name="github" size={14} />
-                Source on GitHub
-              </a>
-              <a className="btn btn-sm" href="https://vibe-coding.fans" target="_blank" rel="noopener">
-                <Icon name="box-arrow-up-right" size={14} />
-                vibe-coding.fans
-              </a>
-            </div>
-            <p className="hint" style={{ marginTop: 'var(--s-4)' }}>
-              MIT licensed. Do what you like with it, including running your own copy.
-            </p>
-          </div>
+    <footer className="foot">
+      <div className="shell">
+        <a className="vcf-home" href="https://vibe-coding.fans/">
+          <VcfMark />
+          <span>
+            More free apps on <b>vibe-coding.fans</b>
+          </span>
+        </a>
 
-          <div>
-            <p style={{ fontSize: 'var(--fs-14)', fontWeight: 600 }}>Built on other people's work</p>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 'var(--s-3) 0 0', display: 'grid', gap: 'var(--s-2)' }}>
-              {CREDITS.map((c) => (
-                <li key={c.name} className="hint">
-                  <a href={c.url} target="_blank" rel="noopener" style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                    {c.name}
-                  </a>{' '}
-                  by {c.by} ({c.licence}), for {c.what}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <p className="hint">
+          <a href={SOURCE} target="_blank" rel="noopener">
+            Source on GitHub
+          </a>
+          , MIT License. QR encoding by{' '}
+          <a href="https://www.nayuki.io/page/qr-code-generator-library" target="_blank" rel="noopener">
+            qrcodegen
+          </a>{' '}
+          from Project Nayuki, MIT License. Decoding by{' '}
+          <a href="https://github.com/cozmo/jsQR" target="_blank" rel="noopener">
+            jsQR
+          </a>{' '}
+          by Cosmo Wolfe, Apache License 2.0. PDF export by{' '}
+          <a href="https://pdf-lib.js.org/" target="_blank" rel="noopener">
+            pdf-lib
+          </a>
+          , batch archives by{' '}
+          <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener">
+            JSZip
+          </a>
+          , icons from{' '}
+          <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener">
+            Bootstrap Icons
+          </a>
+          , all MIT License. Fonts: IBM Plex Sans and IBM Plex Mono, SIL Open Font License.
+        </p>
+
+        <p className="hint">
+          Everything runs in your browser. Nothing is uploaded, nothing is stored, and there are no accounts, no
+          cookies and no tracking. The codes this makes are static: they contain your data rather than a link back
+          here, so they keep working whatever happens to this site.
+        </p>
+
+        <p className="hint">Print a test code and scan it before you order a thousand of anything.</p>
       </div>
     </footer>
   );

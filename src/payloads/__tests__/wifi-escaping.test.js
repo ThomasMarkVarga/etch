@@ -32,12 +32,12 @@ describe('escapeWifi', () => {
   ];
 
   for (const [label, input, expected] of cases) {
-    it(`escapes ${label}`, () => {
+    it(`escapes ${label}`, async () => {
       expect(escapeWifi(input)).toBe(expected);
     });
   }
 
-  it('escapes each special character exactly once', () => {
+  it('escapes each special character exactly once', async () => {
     // A double-escaping bug is just as broken as no escaping, and much harder
     // to spot, because the code still scans and just joins with the wrong key.
     const escaped = escapeWifi('a;b');
@@ -47,29 +47,29 @@ describe('escapeWifi', () => {
 });
 
 describe('buildWifi', () => {
-  it('produces the canonical shape', () => {
+  it('produces the canonical shape', async () => {
     expect(buildWifi({ ssid: 'MyNet', password: 'hunter22', auth: 'WPA' })).toBe('WIFI:T:WPA;S:MyNet;P:hunter22;;');
   });
 
-  it('omits the password field entirely for an open network', () => {
+  it('omits the password field entirely for an open network', async () => {
     const out = buildWifi({ ssid: 'FreeWiFi', auth: 'nopass', password: 'ignored' });
     expect(out).toBe('WIFI:T:nopass;S:FreeWiFi;;');
     expect(out).not.toContain('ignored');
     expect(out).not.toContain('P:');
   });
 
-  it('marks a hidden network', () => {
+  it('marks a hidden network', async () => {
     expect(buildWifi({ ssid: 'Hidden', password: 'hunter22', auth: 'WPA', hidden: true })).toBe(
       'WIFI:T:WPA;S:Hidden;P:hunter22;H:true;;',
     );
   });
 
-  it('escapes specials in both the name and the password', () => {
+  it('escapes specials in both the name and the password', async () => {
     const out = buildWifi({ ssid: 'Cafe; Bar', password: `p:a${BS}ss`, auth: 'WPA' });
     expect(out).toBe(`WIFI:T:WPA;S:Cafe${BS}; Bar;P:p${BS}:a${BS}${BS}ss;;`);
   });
 
-  it('quotes an all-hex value so it is not read as raw hex', () => {
+  it('quotes an all-hex value so it is not read as raw hex', async () => {
     // The specification says a bare hex string may be interpreted as hex bytes
     // rather than as text, so it has to be quoted to force the literal reading.
     const out = buildWifi({ ssid: 'DEADBEEF', password: '12345678', auth: 'WPA' });
@@ -77,7 +77,7 @@ describe('buildWifi', () => {
     expect(out).toContain('P:"12345678"');
   });
 
-  it('does not quote a value containing any non-hex character', () => {
+  it('does not quote a value containing any non-hex character', async () => {
     // "Cafe123" would be quoted, because every one of those characters is a
     // hex digit. "CafeWiFi" has a W in it and so is unambiguous text.
     const out = buildWifi({ ssid: 'CafeWiFi', password: 'parola123', auth: 'WPA' });
@@ -85,7 +85,7 @@ describe('buildWifi', () => {
     expect(out).not.toContain('"CafeWiFi"');
   });
 
-  it('escapes inside the quotes rather than escaping the quotes', () => {
+  it('escapes inside the quotes rather than escaping the quotes', async () => {
     // Regression guard: escaping after quoting turns S:"DEAD" into S:\"DEAD\",
     // which is a value with literal quote characters in it, not a quoted value.
     const out = buildWifi({ ssid: 'DEADBEEF', password: 'abcdef12', auth: 'WPA' });
@@ -93,7 +93,7 @@ describe('buildWifi', () => {
     expect(out).not.toContain(`${BS}"`);
   });
 
-  it('always terminates with a double semicolon', () => {
+  it('always terminates with a double semicolon', async () => {
     for (const input of [
       { ssid: 'A', password: 'bbbbbbbb', auth: 'WPA' },
       { ssid: 'A', auth: 'nopass' },
@@ -115,16 +115,16 @@ describe('a Wi-Fi payload with nasty characters survives the round trip', () => 
   ];
 
   for (const [label, input] of nasty) {
-    it(label, () => {
+    it(label, async () => {
       const payload = buildWifi(input);
       const result = encode(payload);
-      const check = verify(result.matrix, result.version, payload);
+      const check = await verify(result.matrix, result.version, payload);
       expect(check.pass, `failed under ${check.failedIds.join(', ')}`).toBe(true);
       for (const c of check.conditions) expect(c.got).toBe(payload);
     });
   }
 
-  it('an escaped password can be parsed back to the original', () => {
+  it('an escaped password can be parsed back to the original', async () => {
     // The real proof: unescape the field and get the original string back.
     const password = `Latte;2024${BS}Vanilla`;
     const payload = buildWifi({ ssid: 'Test', password, auth: 'WPA' });
@@ -135,11 +135,11 @@ describe('a Wi-Fi payload with nasty characters survives the round trip', () => 
 });
 
 describe('validation', () => {
-  it('requires a network name', () => {
+  it('requires a network name', async () => {
     expect(validateWifi({ ssid: '', password: 'hunter22' }).some((i) => i.field === 'ssid' && i.level === 'error')).toBe(true);
   });
 
-  it('measures the name in bytes, not characters', () => {
+  it('measures the name in bytes, not characters', async () => {
     // 32 bytes is the limit, and an accented character costs two.
     const seventeenAccented = 'ă'.repeat(17); // 34 bytes
     expect(seventeenAccented.length).toBe(17);
@@ -147,17 +147,17 @@ describe('validation', () => {
     expect(issues.some((i) => i.field === 'ssid' && i.level === 'error')).toBe(true);
   });
 
-  it('warns about a WPA password shorter than 8 characters', () => {
+  it('warns about a WPA password shorter than 8 characters', async () => {
     const issues = validateWifi({ ssid: 'Net', password: 'short', auth: 'WPA' });
     expect(issues.some((i) => i.field === 'password' && i.level === 'warning')).toBe(true);
   });
 
-  it('does not demand a password for an open network', () => {
+  it('does not demand a password for an open network', async () => {
     const issues = validateWifi({ ssid: 'Free', auth: 'nopass' });
     expect(issues.some((i) => i.field === 'password')).toBe(false);
   });
 
-  it('warns that hidden networks are unreliable', () => {
+  it('warns that hidden networks are unreliable', async () => {
     const issues = validateWifi({ ssid: 'Net', password: 'hunter22', auth: 'WPA', hidden: true });
     expect(issues.some((i) => i.field === 'hidden')).toBe(true);
   });

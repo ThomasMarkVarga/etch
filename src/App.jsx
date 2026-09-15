@@ -37,7 +37,10 @@ export const DEFAULT_ENCODING = {
 };
 
 export const DEFAULT_PRINT = {
-  widthMm: 30,
+  // 35mm rather than 30mm so the starting width already satisfies the starting
+  // scan distance. Defaults that warn about themselves on first load teach
+  // people to scroll past the warnings.
+  widthMm: 35,
   distanceMm: 300,
   methodId: 'laser',
   units: 'mm',

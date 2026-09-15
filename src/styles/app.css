@@ -343,6 +343,10 @@ p {
 
 .segmented button {
   flex: 1 1 auto;
+  /* Never squeeze a label until its icon drops onto a second line: let the
+     whole control wrap to another row instead, which stays readable at 375px. */
+  min-width: max-content;
+  white-space: nowrap;
   min-height: 36px;
   padding: 0 var(--s-3);
   border: 0;
@@ -747,4 +751,79 @@ table.data th {
     position: sticky;
     top: var(--s-4);
   }
+}
+
+/* ---------------------------------------------------------------- footer -- */
+
+/*
+  The same footer the other vibe-coding.fans apps use: a pink pill linking back
+  to the wall, then small print. The pill's colours are fixed rather than
+  themed, because it carries the vibe-coding.fans brand and that brand is pink
+  in both light and dark.
+*/
+
+.foot {
+  margin-top: var(--s-8);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding-block: var(--s-6);
+}
+
+.foot .hint + .hint {
+  margin-top: var(--s-3);
+}
+
+.foot .hint {
+  max-width: 62ch;
+}
+
+.foot a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.foot a:hover {
+  color: var(--accent-hover);
+}
+
+a.vcf-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: var(--target);
+  margin-bottom: var(--s-4);
+  padding: 0.3rem 1.1rem 0.3rem 0.35rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  color: var(--text);
+  font-size: var(--fs-16);
+  font-weight: 650;
+  text-decoration: none;
+  transition:
+    border-color var(--base) var(--ease-out),
+    background-color var(--base) var(--ease-out);
+}
+
+a.vcf-home:hover {
+  color: var(--text);
+  border-color: #ff4fa3;
+  background: color-mix(in srgb, #ff4fa3 8%, transparent);
+}
+
+.vcf-home svg {
+  flex: 0 0 auto;
+  width: 1.9rem;
+  height: 1.9rem;
+  transition: transform var(--slow) cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.vcf-home:hover svg,
+.vcf-home:focus-visible svg {
+  transform: rotate(-8deg) scale(1.1);
+}
+
+.vcf-home b {
+  font-weight: 800;
 }

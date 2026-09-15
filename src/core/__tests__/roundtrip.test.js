@@ -20,12 +20,12 @@ function exampleFor(type) {
 
 describe('round trip: every payload type', () => {
   for (const type of PAYLOAD_TYPES) {
-    it(`${type.id} survives encode, render and decode unchanged`, () => {
+    it(`${type.id} survives encode, render and decode unchanged`, async () => {
       const text = exampleFor(type);
       expect(text.length, `${type.id} produced an empty payload`).toBeGreaterThan(0);
 
       const result = encode(text);
-      const check = verify(result.matrix, result.version, text);
+      const check = await verify(result.matrix, result.version, text);
 
       for (const condition of check.conditions) {
         expect(condition.got, `${type.id} under "${condition.label}"`).toBe(text);
@@ -47,9 +47,9 @@ describe('round trip: the three cases from the brief', () => {
   ];
 
   for (const [label, text] of cases) {
-    it(`decodes ${label} byte for byte`, () => {
+    it(`decodes ${label} byte for byte`, async () => {
       const result = encode(text);
-      const check = verify(result.matrix, result.version, text);
+      const check = await verify(result.matrix, result.version, text);
       expect(check.failedIds).toEqual([]);
       expect(check.conditions.every((c) => c.got === text)).toBe(true);
     });
@@ -57,23 +57,23 @@ describe('round trip: the three cases from the brief', () => {
 });
 
 describe('the degraded conditions are calibrated, not decorative', () => {
-  it('a plain code passes every condition', () => {
+  it('a plain code passes every condition', async () => {
     const result = encode('https://example.com/menu');
-    const check = verify(result.matrix, result.version, 'https://example.com/menu');
+    const check = await verify(result.matrix, result.version, 'https://example.com/menu');
     expect(check.pass).toBe(true);
   });
 
-  it('a code with no contrast fails, rather than passing everything', () => {
+  it('a code with no contrast fails, rather than passing everything', async () => {
     const text = 'https://example.com/menu';
     const result = encode(text);
     // Light grey on white: technically rendered, practically unreadable.
-    const check = verify(result.matrix, result.version, text, {
+    const check = await verify(result.matrix, result.version, text, {
       style: { foreground: '#DDDDDD', background: '#FFFFFF' },
     });
     expect(check.pass).toBe(false);
   });
 
-  it('a very dense code stops passing every condition', () => {
+  it('a very dense code stops passing every condition', async () => {
     // A dense code has small modules, and small modules are what actually
     // defeats a camera. The specific condition that breaks first is not worth
     // asserting: jsQR turns out to handle three pixels per module better than
@@ -82,13 +82,13 @@ describe('the degraded conditions are calibrated, not decorative', () => {
     const text = 'x'.repeat(1200);
     const result = encode(text);
     expect(result.version).toBeGreaterThan(20);
-    const check = verify(result.matrix, result.version, text);
+    const check = await verify(result.matrix, result.version, text);
     expect(check.pass).toBe(false);
   });
 });
 
 describe('SVG path merging', () => {
-  it('produces exactly the same matrix as one rectangle per module', () => {
+  it('produces exactly the same matrix as one rectangle per module', async () => {
     for (const text of ['https://example.com', 'Mâine', '12345678901234567890', 'x'.repeat(300)]) {
       const result = encode(text);
       const rects = mergeRectangles((x, y) => result.matrix[y][x], result.size);
@@ -97,13 +97,13 @@ describe('SVG path merging', () => {
     }
   });
 
-  it('merges far fewer paths than there are dark modules', () => {
+  it('merges far fewer paths than there are dark modules', async () => {
     const result = encode('https://example.com/menu');
     const svg = matrixToSvg(result.matrix, result.version);
     expect(svg.rectCount).toBeLessThan(svg.naiveRectCount * 0.65);
   });
 
-  it('emits a title and a description naming the payload type', () => {
+  it('emits a title and a description naming the payload type', async () => {
     const result = encode('https://example.com/menu');
     const svg = matrixToSvg(result.matrix, result.version, {
       title: 'Website QR code',
@@ -115,7 +115,7 @@ describe('SVG path merging', () => {
     expect(svg.svg).toContain('aria-labelledby="etch-title etch-desc"');
   });
 
-  it('escapes markup in the title rather than injecting it', () => {
+  it('escapes markup in the title rather than injecting it', async () => {
     const result = encode('test');
     const svg = matrixToSvg(result.matrix, result.version, { title: '<script>alert(1)</script>' });
     expect(svg.svg).not.toContain('<script>');
@@ -124,14 +124,14 @@ describe('SVG path merging', () => {
 });
 
 describe('the rasteriser agrees with the matrix', () => {
-  it('samples every module centre back to the value in the matrix', () => {
+  it('samples every module centre back to the value in the matrix', async () => {
     const result = encode('https://example.com/menu');
     const raster = rasterize(result.matrix, result.version, { modulePx: 9 });
     const sampled = sampleModuleCentres(raster, result.size, 4);
     expect(sampled).toEqual(result.matrix);
   });
 
-  it('uses whole pixels per module, so nothing lands on a half pixel', () => {
+  it('uses whole pixels per module, so nothing lands on a half pixel', async () => {
     const result = encode('https://example.com');
     for (const modulePx of [3, 4, 7, 12]) {
       const raster = rasterize(result.matrix, result.version, { modulePx });

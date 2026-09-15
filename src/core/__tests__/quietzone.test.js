@@ -16,7 +16,7 @@ import { normaliseStyle } from '../style.js';
 const TEXT = 'https://example.com/menu';
 
 describe('the quiet zone cannot be removed', () => {
-  it('clamps anything below the minimum back up to it', () => {
+  it('clamps anything below the minimum back up to it', async () => {
     for (const requested of [0, 1, 2, 3, -5]) {
       const { style, adjustments } = normaliseStyle({ quietZone: requested });
       expect(style.quietZone).toBe(MIN_QUIET_ZONE);
@@ -27,19 +27,19 @@ describe('the quiet zone cannot be removed', () => {
     }
   });
 
-  it('honours a larger quiet zone when asked', () => {
+  it('honours a larger quiet zone when asked', async () => {
     const { style } = normaliseStyle({ quietZone: 8 });
     expect(style.quietZone).toBe(8);
   });
 
-  it('defaults to exactly the standard minimum', () => {
+  it('defaults to exactly the standard minimum', async () => {
     expect(normaliseStyle({}).style.quietZone).toBe(4);
     expect(MIN_QUIET_ZONE).toBe(4);
   });
 });
 
 describe('SVG exports include the quiet zone', () => {
-  it('sizes the viewBox to the code plus the border on both sides', () => {
+  it('sizes the viewBox to the code plus the border on both sides', async () => {
     const result = encode(TEXT);
     for (const quietZone of [4, 6, 10]) {
       const svg = matrixToSvg(result.matrix, result.version, { style: { quietZone } });
@@ -49,7 +49,7 @@ describe('SVG exports include the quiet zone', () => {
     }
   });
 
-  it('draws no dark module inside the border', () => {
+  it('draws no dark module inside the border', async () => {
     const result = encode(TEXT);
     const quietZone = 4;
     const svg = matrixToSvg(result.matrix, result.version, { style: { quietZone } });
@@ -67,7 +67,7 @@ describe('SVG exports include the quiet zone', () => {
     }
   });
 
-  it('paints a background across the border, so the border is white paper', () => {
+  it('paints a background across the border, so the border is white paper', async () => {
     const result = encode(TEXT);
     const svg = matrixToSvg(result.matrix, result.version, { style: { quietZone: 4, background: '#FFFFFF' } });
     const total = result.size + 8;
@@ -76,7 +76,7 @@ describe('SVG exports include the quiet zone', () => {
 });
 
 describe('raster exports include the quiet zone', () => {
-  it('leaves the border entirely background-coloured', () => {
+  it('leaves the border entirely background-coloured', async () => {
     const result = encode(TEXT);
     const quietZone = 4;
     const modulePx = 6;
@@ -99,7 +99,7 @@ describe('raster exports include the quiet zone', () => {
     }
   });
 
-  it('scales the raster to include the border at every module size', () => {
+  it('scales the raster to include the border at every module size', async () => {
     const result = encode(TEXT);
     for (const quietZone of [4, 7]) {
       for (const modulePx of [3, 8]) {

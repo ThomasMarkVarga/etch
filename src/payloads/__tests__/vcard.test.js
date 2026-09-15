@@ -21,7 +21,7 @@ const BS = String.fromCharCode(92);
  */
 
 describe('vCard escaping', () => {
-  it('escapes backslash, semicolon, comma and newline', () => {
+  it('escapes backslash, semicolon, comma and newline', async () => {
     expect(escapeVCard(`a${BS}b`)).toBe(`a${BS}${BS}b`);
     expect(escapeVCard('a;b')).toBe(`a${BS};b`);
     expect(escapeVCard('a,b')).toBe(`a${BS},b`);
@@ -29,12 +29,12 @@ describe('vCard escaping', () => {
     expect(escapeVCard('a\r\nb')).toBe(`a${BS}nb`);
   });
 
-  it('leaves the colon alone, which vCard does not escape', () => {
+  it('leaves the colon alone, which vCard does not escape', async () => {
     // Unlike meCard. Getting these two confused is a common source of bugs.
     expect(escapeVCard('a:b')).toBe('a:b');
   });
 
-  it('keeps a semicolon in a surname from shifting the structured N field', () => {
+  it('keeps a semicolon in a surname from shifting the structured N field', async () => {
     const card = buildVCard({ firstName: 'Ana', lastName: 'Popescu; Ionescu' });
     const n = card.split('\r\n').find((l) => l.startsWith('N:'));
     expect(n).toBe(`N:Popescu${BS}; Ionescu;Ana;;;`);
@@ -56,7 +56,7 @@ describe('vCard structure', () => {
     country: 'Romania',
   };
 
-  it('opens and closes correctly, at version 3.0', () => {
+  it('opens and closes correctly, at version 3.0', async () => {
     const card = buildVCard(contact);
     const lines = card.split('\r\n');
     expect(lines[0]).toBe('BEGIN:VCARD');
@@ -64,86 +64,86 @@ describe('vCard structure', () => {
     expect(lines[lines.length - 1]).toBe('END:VCARD');
   });
 
-  it('uses CRLF, as the specification requires', () => {
+  it('uses CRLF, as the specification requires', async () => {
     expect(buildVCard(contact)).toContain('\r\n');
     expect(buildVCard(contact).split('\r\n').join('')).not.toContain('\n');
   });
 
-  it('writes a formatted name as well as the structured one', () => {
+  it('writes a formatted name as well as the structured one', async () => {
     const card = buildVCard(contact);
     expect(card).toContain('FN:Ana Popescu-Ionescu');
     expect(card).toContain('N:Popescu-Ionescu;Ana;;;');
   });
 
-  it('writes the address with seven structured components', () => {
+  it('writes the address with seven structured components', async () => {
     const card = buildVCard(contact);
     const adr = card.split('\r\n').find((l) => l.startsWith('ADR'));
     expect(adr).toBeDefined();
     expect(adr.split(':')[1].split(';').length).toBe(7);
   });
 
-  it('omits fields that were not filled in', () => {
+  it('omits fields that were not filled in', async () => {
     const card = buildVCard({ firstName: 'Ana' });
     expect(card).not.toContain('ORG:');
     expect(card).not.toContain('TEL');
     expect(card).not.toContain('ADR');
   });
 
-  it('falls back to the organisation when there is no personal name', () => {
+  it('falls back to the organisation when there is no personal name', async () => {
     expect(buildVCard({ organisation: 'Atelier SRL' })).toContain('FN:Atelier SRL');
   });
 });
 
 describe('meCard escaping differs from vCard, on purpose', () => {
-  it('escapes the colon, which vCard does not', () => {
+  it('escapes the colon, which vCard does not', async () => {
     expect(escapeMeCard('a:b')).toBe(`a${BS}:b`);
     expect(escapeVCard('a:b')).toBe('a:b');
   });
 
-  it('keeps the name separator comma unescaped while escaping commas in values', () => {
+  it('keeps the name separator comma unescaped while escaping commas in values', async () => {
     const card = buildMeCard({ firstName: 'Ana', lastName: 'Popescu, Jr' });
     expect(card).toContain(`N:Popescu${BS}, Jr,Ana;`);
   });
 
-  it('terminates with a double semicolon', () => {
+  it('terminates with a double semicolon', async () => {
     expect(buildMeCard({ firstName: 'Ana', lastName: 'Pop' }).endsWith(';;')).toBe(true);
   });
 
-  it('produces a shorter payload than vCard, which is its whole reason to exist', () => {
+  it('produces a shorter payload than vCard, which is its whole reason to exist', async () => {
     const contact = { firstName: 'Ana', lastName: 'Pop', mobile: '+40722123456', email: 'a@b.com' };
     expect(buildMeCard(contact).length).toBeLessThan(buildVCard(contact).length);
   });
 });
 
 describe('calendar events', () => {
-  it('escapes commas in a location so it is not read as two locations', () => {
+  it('escapes commas in a location so it is not read as two locations', async () => {
     const event = buildVEvent({ summary: 'Târg', location: 'Strada Mare 12, Cluj', start: '2026-12-04T17:00' });
     expect(event).toContain(`LOCATION:Strada Mare 12${BS}, Cluj`);
   });
 
-  it('writes floating local time by default, so a poster means what it says', () => {
+  it('writes floating local time by default, so a poster means what it says', async () => {
     const event = buildVEvent({ summary: 'X', start: '2026-12-04T17:00', utc: false });
     expect(event).toContain('DTSTART:20261204T170000');
     expect(event).not.toContain('DTSTART:20261204T170000Z');
   });
 
-  it('writes UTC only when explicitly asked', () => {
+  it('writes UTC only when explicitly asked', async () => {
     const event = buildVEvent({ summary: 'X', start: '2026-12-04T17:00', utc: true });
     expect(event).toMatch(/DTSTART:\d{8}T\d{6}Z/);
   });
 
-  it('writes an all-day event as a date value', () => {
+  it('writes an all-day event as a date value', async () => {
     const event = buildVEvent({ summary: 'X', start: '2026-12-04', allDay: true });
     expect(event).toContain('DTSTART;VALUE=DATE:20261204');
   });
 
-  it('formats dates without a separator', () => {
+  it('formats dates without a separator', async () => {
     expect(formatIcalDate('2026-12-04T17:30', false)).toBe('20261204T173000');
     expect(formatIcalDate('2026-12-04', false)).toBe('20261204');
     expect(formatIcalDate('', false)).toBeNull();
   });
 
-  it('wraps the event in a calendar', () => {
+  it('wraps the event in a calendar', async () => {
     const event = buildVEvent({ summary: 'X', start: '2026-12-04T17:00' });
     expect(event.startsWith('BEGIN:VCALENDAR')).toBe(true);
     expect(event.endsWith('END:VCALENDAR')).toBe(true);
@@ -151,33 +151,33 @@ describe('calendar events', () => {
     expect(event).toContain('VERSION:2.0');
   });
 
-  it('escapes backslashes and semicolons in a description', () => {
+  it('escapes backslashes and semicolons in a description', async () => {
     expect(escapeIcal(`a${BS}b;c,d`)).toBe(`a${BS}${BS}b${BS};c${BS},d`);
   });
 });
 
 describe('mailto and the other URI formats', () => {
-  it('percent-encodes the reserved sub-delimiters encodeURIComponent misses', () => {
+  it('percent-encodes the reserved sub-delimiters encodeURIComponent misses', async () => {
     expect(encodeComponent("it's (a) test!*")).toBe('it%27s%20%28a%29%20test%21%2A');
   });
 
-  it('builds a mailto with encoded subject and body', () => {
+  it('builds a mailto with encoded subject and body', async () => {
     const out = buildEmail({ to: 'a@example.com', subject: 'Table booking', body: 'Hi there & thanks' });
     expect(out).toContain('mailto:a%40example.com@example.com'.slice(0, 7));
     expect(out).toContain('subject=Table%20booking');
     expect(out).toContain('body=Hi%20there%20%26%20thanks');
   });
 
-  it('keeps the at sign readable in the address', () => {
+  it('keeps the at sign readable in the address', async () => {
     expect(buildEmail({ to: 'ana@example.com' })).toBe('mailto:ana@example.com');
   });
 
-  it('uses the RFC form for SMS by default and SMSTO only when asked', () => {
+  it('uses the RFC form for SMS by default and SMSTO only when asked', async () => {
     expect(buildSms({ number: '+40722123456', message: 'STOP' })).toBe('sms:+40722123456?body=STOP');
     expect(buildSms({ number: '+40722123456', message: 'STOP', format: 'smsto' })).toBe('SMSTO:+40722123456:STOP');
   });
 
-  it('strips formatting from phone numbers but keeps the leading plus', () => {
+  it('strips formatting from phone numbers but keeps the leading plus', async () => {
     expect(normaliseNumber('+40 (722) 123-456')).toBe('+40722123456');
     expect(normaliseNumber('0722 123 456')).toBe('0722123456');
     // A plus that is not at the start is a typo, not a second country code.
@@ -185,7 +185,7 @@ describe('mailto and the other URI formats', () => {
     expect(buildTel({ number: '+40 722 123 456' })).toBe('tel:+40722123456');
   });
 
-  it('trims geo coordinates to a sane precision', () => {
+  it('trims geo coordinates to a sane precision', async () => {
     expect(buildGeo({ latitude: '44.4268000', longitude: '26.1025000' })).toBe('geo:44.4268,26.1025');
     expect(buildGeo({ latitude: 44.42681234567, longitude: 26.10251234567 })).toBe('geo:44.426812,26.102512');
   });
@@ -213,9 +213,9 @@ describe('round trip for contact and event payloads', () => {
   ];
 
   for (const [label, payload] of cases) {
-    it(label, () => {
+    it(label, async () => {
       const result = encode(payload);
-      const check = verify(result.matrix, result.version, payload);
+      const check = await verify(result.matrix, result.version, payload);
       expect(check.pass, `failed under ${check.failedIds.join(', ')}`).toBe(true);
       for (const c of check.conditions) expect(c.got).toBe(payload);
     });
@@ -223,16 +223,16 @@ describe('round trip for contact and event payloads', () => {
 });
 
 describe('contact validation', () => {
-  it('requires something identifying', () => {
+  it('requires something identifying', async () => {
     expect(validateContact({}).some((i) => i.level === 'error')).toBe(true);
     expect(validateContact({ organisation: 'Atelier' }).some((i) => i.level === 'error')).toBe(false);
   });
 
-  it('warns when there is no way to contact the person', () => {
+  it('warns when there is no way to contact the person', async () => {
     expect(validateContact({ firstName: 'Ana' }).some((i) => i.field === 'phone' && i.level === 'warning')).toBe(true);
   });
 
-  it('warns about a website with no scheme', () => {
+  it('warns about a website with no scheme', async () => {
     expect(
       validateContact({ firstName: 'Ana', email: 'a@b.com', website: 'example.com' }).some((i) => i.field === 'website'),
     ).toBe(true);

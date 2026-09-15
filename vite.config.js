@@ -4,8 +4,22 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  server: { port: 8765, strictPort: true, host: true },
-  preview: { port: 8765, strictPort: true },
+  server: {
+    port: 8765,
+    strictPort: true,
+    host: true,
+    // Vite rejects requests whose Host header it does not recognise, which is
+    // what otherwise turns a tunnelled dev server into a blank "Blocked
+    // request" page. Development only: the production build is static files
+    // and has no dev server to protect.
+    allowedHosts: ['.ngrok-free.app', '.ngrok.io', '.trycloudflare.com', 'localhost'],
+  },
+  preview: {
+    port: 8765,
+    strictPort: true,
+    host: true,
+    allowedHosts: ['.ngrok-free.app', '.ngrok.io', '.trycloudflare.com', 'localhost'],
+  },
   build: {
     target: 'es2020',
     cssCodeSplit: false,
