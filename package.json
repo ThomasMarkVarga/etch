@@ -10,7 +10,10 @@
     "build": "node scripts/make-og.mjs && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "wall:qr": "node scripts/make-wall-qr.mjs",
+    "wall:gif": "node scripts/make-wall-gif.mjs",
+    "wall": "npm run wall:qr && npm run wall:gif"
   },
   "dependencies": {
     "jsqr": "^1.4.0",
