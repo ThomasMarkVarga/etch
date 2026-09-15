@@ -1,0 +1,17 @@
+# Etch
+
+> A QR code you print once and never have to reprint. Free static QR codes, generated entirely in your browser.
+
+Etch encodes your data directly into the QR pattern. Most free QR generators encode their own short link, which redirects to yours, so the printed code stops working when the subscription or the company ends. Etch makes static codes only: no redirect, no account, no tracking and nothing to expire. Nothing you type is uploaded.
+
+## What it does
+
+- [Etch](https://etch.vibe-coding.fans/): static QR codes for a link, plain text, a Wi-Fi network, a contact card, an email, an SMS, a phone number, a location, a calendar event, a SEPA payment or an app store link.
+- Downloads as SVG, PNG or a print-ready PDF, with your colours, module shapes and a centre logo.
+- Reads every code back with a real decoder before you download it, under four scan conditions, and tells you how big to print it.
+- Batch mode turns a CSV file into a ZIP of codes.
+- Check a code: open an existing QR code to see whether it holds your data or goes through a redirect service.
+
+## More
+
+- [vibe-coding.fans](https://vibe-coding.fans/): more free vibe coded apps, with no signup.

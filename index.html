@@ -16,11 +16,11 @@
     <meta name="color-scheme" content="light dark" />
 
     <!--
-      Site URL comes from VITE_SITE_URL at build time. It is empty by default,
-      which leaves these as root-relative paths so the preview image resolves
-      against whatever host is serving the page: localhost, a tunnel, or a
-      staging domain. Set it to the real origin for the production build, since
-      a few crawlers still insist on an absolute og:image.
+      Site URL comes from VITE_SITE_URL at build time. A production build uses
+      https://etch.vibe-coding.fans unless it is set (see vite.config.js), since
+      a few crawlers still insist on an absolute og:image. The dev server leaves
+      these root-relative, so the preview image resolves against whatever host
+      is serving the page.
     -->
 
     <meta property="og:type" content="website" />
@@ -52,6 +52,8 @@
     />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
@@ -99,7 +101,8 @@
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Any browser",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-        "description": "Static QR code generator that encodes your data directly into the pattern, with no redirect, no account and no subscription. Runs entirely in the browser."
+        "description": "Static QR code generator that encodes your data directly into the pattern, with no redirect, no account and no subscription. Runs entirely in the browser.",
+        "isPartOf": { "@type": "WebSite", "name": "vibe-coding.fans", "url": "https://vibe-coding.fans/" }
       }
     </script>
   </head>

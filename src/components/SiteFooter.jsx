@@ -33,13 +33,12 @@ function VcfMark() {
   );
 }
 
-const SOURCE = 'https://github.com/ThomasMarkVarga/etch';
+const SOURCE = 'https://github.com/qxZap/etch';
 
 const LINKS = [
   { icon: 'github', label: 'Source on GitHub', href: SOURCE },
   { icon: 'shield-check', label: 'How it works', href: '#how-it-works' },
   { icon: 'question-circle', label: 'Questions', href: '#learn' },
-  { icon: 'box-arrow-up-right', label: 'vibe-coding.fans', href: 'https://vibe-coding.fans/' },
 ];
 
 const CREDITS = [

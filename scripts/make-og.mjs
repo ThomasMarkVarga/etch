@@ -159,5 +159,30 @@ if (!check.pass) {
   console.log('apple-touch-icon.png written (180x180)');
 }
 
+/* ------------------------------------ favicon-96.png and favicon.ico, 48 -- */
+
+// Search results take a site's icon from a raster favicon of 48px or a multiple of it; the SVG alone is not used.
+{
+  const draw = (S) => {
+    const icon = makeCanvas(S, S, ACCENT);
+    drawMark(icon, 0, 0, S, ACCENT, WHITE);
+    return encodePng(icon.data, S, S);
+  };
+  await writeFile(join(publicDir, 'favicon-96.png'), draw(96));
+  // An ICO holding one PNG: a 6 byte header, one 16 byte directory entry, then the image itself.
+  const png = draw(48);
+  const head = Buffer.alloc(22);
+  head.writeUInt16LE(1, 2);
+  head.writeUInt16LE(1, 4);
+  head.writeUInt8(48, 6);
+  head.writeUInt8(48, 7);
+  head.writeUInt16LE(1, 10);
+  head.writeUInt16LE(32, 12);
+  head.writeUInt32LE(png.length, 14);
+  head.writeUInt32LE(22, 18);
+  await writeFile(join(publicDir, 'favicon.ico'), Buffer.concat([head, png]));
+  console.log('favicon-96.png and favicon.ico written (96x96, 48x48)');
+}
+
 console.log(`scan test: ${check.conditions.map((c) => `${c.id} ${c.matched ? 'ok' : 'FAIL'}`).join(', ')}`);
 console.log(`logo covers ${(logoCheck.coverage * 100).toFixed(1)}% of ${(logoCheck.ceiling * 100).toFixed(1)}% allowed`);

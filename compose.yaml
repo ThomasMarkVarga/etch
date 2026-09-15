@@ -1,0 +1,5 @@
+services:
+  etch:
+    build: .
+    ports:
+      - "8084:8765"

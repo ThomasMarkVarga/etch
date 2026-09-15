@@ -1,3 +1,0 @@
-# Cloudflare Pages SPA fallback: every path serves the single page, which then
-# reads its state from the hash. 200 rather than 302 so the URL is preserved.
-/*    /index.html   200
