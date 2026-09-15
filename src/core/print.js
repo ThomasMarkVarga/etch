@@ -220,27 +220,27 @@ export const SURFACE_WARNINGS = [
   {
     id: 'curved',
     title: 'Curved surfaces',
-    body: 'A bottle, a pipe, a cup. Curvature distorts the grid and the far side of the curve falls out of focus. Keep the code under about a third of the way around the curve, and print it larger than the flat-surface answer above.',
+    body: 'Curvature distorts the grid and the far side falls out of focus. Keep the code under about a third of the way round, and print it larger than the figure above.',
   },
   {
     id: 'reflective',
     title: 'Laminate, gloss and metal',
-    body: 'A shiny finish bounces the phone’s own light straight back and blows out part of the pattern. Matt laminate is reliable; gloss is not. On metal, a brushed or bead-blasted finish beats a polished one.',
+    body: 'A shiny finish bounces the phone’s own light back and blows out part of the pattern. Matt laminate is reliable, gloss is not.',
   },
   {
     id: 'busy',
     title: 'Printing over a photo or pattern',
-    body: 'The code needs a plain area behind it, including the clear border. Put it on a solid panel rather than straight onto artwork.',
+    body: 'The code needs a plain area behind it, border included. Put it on a solid panel, not straight onto artwork.',
   },
   {
     id: 'substrate',
     title: 'Fabric, cardboard and unfinished wood',
-    body: 'Absorbent and textured materials spread the ink and soften every edge. Treat the module floor for these as roughly double the figure for paper.',
+    body: 'These spread the ink and soften every edge. Treat the square floor as roughly double the paper figure.',
   },
   {
     id: 'light',
     title: 'Where it will be read',
-    body: 'A code in a dim corridor or in direct sun is harder than the same code on a desk. If the placement is fixed and the lighting is poor, go up a size.',
+    body: 'A dim corridor or direct sun is harder than a desk. If the lighting is poor, go up a size.',
   },
 ];
 

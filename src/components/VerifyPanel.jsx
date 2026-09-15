@@ -135,10 +135,8 @@ export default function VerifyPanel({ verification, verifying, culprit, onRevert
             ))}
           </ul>
           <p className="hint" style={{ marginTop: 'var(--s-4)' }}>
-            Each test renders this exact code, including its colours, square shape and any logo, then decodes the image
-            with jsQR and compares the result to your text byte for byte. Passing here is a strong signal, not a
-            guarantee: paper, ink, lighting and the scanner in someone's hand still matter more than anything this app
-            controls.
+            Each test renders this exact code, decodes it with a real decoder and compares byte for byte. A strong
+            signal, not a guarantee: paper, ink and lighting still matter more.
           </p>
         </div>
       </details>

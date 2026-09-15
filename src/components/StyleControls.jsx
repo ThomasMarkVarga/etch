@@ -87,9 +87,7 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
 
       <div className="disclosure-body stack">
         <Notice kind="info" word="Before you start">
-          Every change here trades appearance against the chance a phone reads the code first time, in bad light, off
-          paper. The scan test beside your code re-runs after each change and will tell you when a choice has gone too
-          far.
+          Every change here trades looks against the chance it scans. The test beside your code re-runs after each one.
         </Notice>
 
         {/* ---------------------------------------------------- colours -- */}
@@ -177,8 +175,7 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
           <span>
             <strong style={{ fontWeight: 600 }}>Transparent background</strong>
             <span className="hint" style={{ display: 'block' }}>
-              For placing over a solid colour you control. Whatever ends up behind it must be light and plain, across
-              the clear border too. Over a photo or a pattern the code will not scan.
+              Whatever ends up behind it must be light and plain. Over a photo, it will not scan.
             </span>
           </span>
         </label>
@@ -229,27 +226,21 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
             ))}
           </div>
           <p className="hint">
-            One control, rather than separate ring and centre shapes, and that is a deliberate limit. A scanner finds
-            the code by looking for a run of dark, light, dark, light, dark in the proportions 1:1:3:1:1 across a
-            corner square. Testing every ring and centre combination against 28 codes showed that the proportion only
-            holds when the two shapes match: a square ring around a circular centre read correctly in 16 cases out of
-            28, and a circular ring around a square centre in none at all. Matched shapes read in all 28. So the
-            combinations that break are simply not offered.
+            Ring and centre always match. Mixing them broke the code in 12 of 28 test scans, so those combinations are
+            not offered.
           </p>
         </div>
 
         <p className="hint">
-          The alternating line running between the corners is left as solid squares whatever you choose here, for the
-          same reason: it is how a scanner works out the grid spacing before it reads a single square of your data.
+          The line between the corners stays square: it is how a scanner works out the grid.
         </p>
 
         {/* ------------------------------------------------------- logo -- */}
         <div className="field">
           <span className="label">Logo in the middle</span>
           <p className="hint">
-            A logo covers squares, and covered squares have to be reconstructed from the damage tolerance. That budget
-            also has to absorb scratches, ink spread and dirt, so the limit here is about half of what the standard
-            nominally allows.
+            A logo covers squares that error correction has to rebuild, using budget meant for scratches and ink
+            spread. Correction rises automatically to keep up.
           </p>
 
           {!style.logo ? (
@@ -269,8 +260,7 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
                 </button>
               </div>
               <p className="hint centered">
-                PNG, JPEG, SVG or WebP, up to 512KB. Read in your browser: like everything else here, it is never
-                uploaded anywhere. The code will be re-checked with the logo in place before you can download it.
+                PNG, JPEG, SVG or WebP, up to 512KB. Read in your browser, never uploaded.
               </p>
             </>
           ) : (
@@ -316,8 +306,7 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
                   onChange={(e) => onLogoChange({ ...style.logo, sizeRatio: Number(e.target.value) / 100 })}
                 />
                 <p className="hint">
-                  This code tops out at {sliderMax}%. Past that, the logo covers more squares than even the highest
-                  error correction can rebuild. Drag it up and the correction level rises to keep pace.
+                  This code tops out at {sliderMax}%. Correction rises as you drag.
                 </p>
               </div>
 
@@ -394,9 +383,8 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
             onChange={(e) => set({ quietZone: Number(e.target.value) })}
           />
           <p className="hint">
-            The standard requires at least four, and this app will not go below it. The blank margin is part of the
-            code: it is how a scanner works out where the pattern ends. Widening it slightly is a cheap insurance
-            policy against a trimming machine that drifts.
+            Four is the standard minimum and this app will not go lower. Widening it is cheap insurance against a
+            trimmer that drifts.
           </p>
         </div>
 

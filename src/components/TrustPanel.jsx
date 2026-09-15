@@ -103,8 +103,8 @@ export default function TrustPanel() {
               {ready ? external : '...'}
             </p>
             <p className="hint">
-              Counted live in your browser with PerformanceObserver. {sameOrigin} same-origin requests loaded the app
-              itself: the page, the script, the stylesheet and two font files. After that, nothing.
+              Counted live with PerformanceObserver. {sameOrigin} same-origin requests loaded the app itself. After
+              that, nothing.
             </p>
           </div>
 
@@ -123,27 +123,21 @@ export default function TrustPanel() {
               {online ? 'Online' : 'Offline, still working'}
             </p>
             <p className="hint">
-              Turn off your Wi-Fi and reload the page. Everything keeps working, because there is nothing to fetch and
-              nothing to ask permission from.
+              Turn off your Wi-Fi and reload. Everything keeps working.
             </p>
           </div>
         </div>
 
         <Notice kind="info" word="Check it yourself">
-          Open your browser's developer tools, go to the Network tab, and type into the field above. Nothing appears.
-          The code is built from your text by JavaScript running on this page, and your text never leaves it.
+          Open developer tools, go to the Network tab, and type into the field above. Nothing appears.
         </Notice>
 
         <div>
           <h3 style={{ fontSize: 'var(--fs-16)', marginBottom: 'var(--s-2)' }}>How this works</h3>
           <p className="hint">
-            Your data is turned into the black and white pattern right here in the page. Nothing is sent anywhere,
-            nothing is stored, and no account exists to store it against. Most importantly:{' '}
-            <strong style={{ color: 'var(--text)' }}>
-              the code contains no reference to this website at all.
-            </strong>{' '}
-            Scan one of these with the site closed, with this site deleted, with the company that made it long gone,
-            and it still works, because the answer is in the pattern rather than at the end of a redirect.
+            Your data becomes the pattern right here in the page.{' '}
+            <strong style={{ color: 'var(--text)' }}>The code contains no reference to this website at all,</strong> so
+            it keeps working even with this site deleted.
           </p>
         </div>
 
@@ -156,23 +150,23 @@ export default function TrustPanel() {
             {[
               [
                 'Very long text makes a fragile code',
-                'More characters means more squares, and at a fixed printed size every square gets smaller. A long payload can be technically valid and still scan badly. Encoding a short address on your own domain beats encoding a paragraph.',
+                'More characters means smaller squares at the same printed size. A short address on your own domain beats a paragraph.',
               ],
               [
                 'Styling always costs something',
-                'Dots, gradients and a centre logo all reduce the margin the code has to work with. The scan test here is a genuinely good check, but it is a simulation. It cannot model your exact printer, your paper, or a scratched laminate.',
+                'The scan test is a good check but it is a simulation. It cannot model your printer, your paper, or a scratched laminate.',
               ],
               [
                 'Some scanners are worse than others',
-                'Older dedicated scanners and some in-app browsers, particularly inside social media apps, handle Wi-Fi, calendar and payment codes badly or not at all. The notes on each type say what is known, and nothing here claims compatibility that has not been checked.',
+                'Older scanners and in-app browsers handle Wi-Fi, calendar and payment codes badly or not at all. The note on each type says what is known.',
               ],
               [
                 'Print quality beats everything in this app',
-                'Substrate, ink, contrast and the light in the room matter more than any setting on this page. A perfect file printed badly fails; an ordinary file printed well does not.',
+                'A perfect file printed badly fails. An ordinary file printed well does not.',
               ],
               [
                 'Your code is permanent. Your domain is not.',
-                'This is the one nobody tells you. A statically encoded address will still be readable in thirty years, but it points at a website, and that website lasts exactly as long as someone keeps renewing the domain and paying for hosting. If the code is going on something permanent, the domain is the part to worry about, not the pattern.',
+                'The one nobody tells you. The pattern will still be readable in thirty years, but the website it points at lasts exactly as long as someone keeps renewing the domain.',
               ],
             ].map(([title, body]) => (
               <div key={title}>

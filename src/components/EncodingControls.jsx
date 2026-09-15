@@ -102,9 +102,8 @@ export default function EncodingControls({ etch, encoding, setEncoding, onApplyS
               How much damage it should survive
             </span>
             <p className="hint">
-              Higher is not better. More damage tolerance needs more squares, so at a fixed printed width every square
-              gets smaller, and small squares are the thing that actually defeats a camera. Raise it for a code that
-              will be handled, scratched or carries a logo. Leave it alone otherwise.
+              Higher is not better: more tolerance means more, smaller squares at the same printed size. Raise it for
+              codes that get handled or carry a logo.
             </p>
             <div className="segmented" role="group" aria-labelledby="ecc-label">
               {ECC_LETTERS.map((l) => (
@@ -135,8 +134,7 @@ export default function EncodingControls({ etch, encoding, setEncoding, onApplyS
             <span>
               <strong style={{ fontWeight: 600 }}>Use up any spare room for extra damage tolerance</strong>
               <span className="hint" style={{ display: 'block' }}>
-                When your text does not quite fill the grid, the leftover space can go towards surviving damage instead
-                of being wasted. This never makes the code bigger. Worth leaving on.
+                Spare space goes towards surviving damage instead of being wasted. Never makes the code bigger.
               </span>
             </span>
           </label>
@@ -146,8 +144,7 @@ export default function EncodingControls({ etch, encoding, setEncoding, onApplyS
               Smallest grid to use
             </label>
             <p className="hint">
-              Normally the code uses the smallest grid your text fits in. Set a floor when you are making a batch and
-              want every code to have the same number of squares, so they all print at a matching size.
+              Normally the smallest that fits. Set a floor to make a batch of codes all the same size.
             </p>
             <select
               id="minver"
@@ -169,9 +166,7 @@ export default function EncodingControls({ etch, encoding, setEncoding, onApplyS
               Pattern scrambling
             </label>
             <p className="hint">
-              The standard defines eight ways of shuffling the pattern so it does not end up with large blank areas
-              that confuse a scanner. The best one is picked automatically. Change it only if you have a specific
-              printer or surface where another reads better, and test before you commit.
+              Eight ways of shuffling the pattern so it has no confusing blank areas. The best is picked for you.
             </p>
             <select id="mask" className="select" value={encoding.mask} onChange={(e) => set({ mask: Number(e.target.value) })}>
               <option value={-1}>Automatic (recommended)</option>
@@ -195,10 +190,8 @@ export default function EncodingControls({ etch, encoding, setEncoding, onApplyS
               <span>
                 <strong style={{ fontWeight: 600 }}>Add an explicit character-set marker</strong>
                 <span className="hint" style={{ display: 'block' }}>
-                  Your text contains accented or non-Latin characters. They are already stored as UTF-8, which every
-                  modern scanner detects on its own, and that is why this is off by default. Ticking it adds a formal
-                  marker saying so: strictly more correct, but a minority of older scanners handle the marker worse
-                  than they handle the plain text. Leave it off unless you have a scanner that needs it.
+                  Accented characters already work: modern scanners detect UTF-8 themselves. This adds a formal marker
+                  some older scanners handle worse. Leave it off unless yours needs it.
                 </span>
               </span>
             </label>

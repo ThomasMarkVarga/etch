@@ -191,17 +191,12 @@ export default function PrintPanel({ etch, print, setPrint }) {
           </summary>
           <div className="disclosure-body">
             <p className="hint">
-              The working rule across the industry is that a code should be printed about a tenth as wide as the
-              distance it is read from, so {DISTANCE_TO_WIDTH_RATIO}:1. It is a simplification of the real
-              relationship, which depends on the size of an individual square and on the resolving power of the camera
-              rather than on the code's overall width.
+              The industry rule is a tenth as wide as the distance it is read from, so {DISTANCE_TO_WIDTH_RATIO}:1. It
+              is a simplification: what really matters is the size of one square against what the camera can resolve.
             </p>
             <p className="hint" style={{ marginTop: 'var(--s-3)' }}>
-              Two adjustments are applied on top, and both only ever make the answer bigger. A denser code has smaller
-              squares at the same width, so the figure scales with the number of squares
-              {forDistance.densityFactor > 1.01 ? ` (currently ${forDistance.densityFactor.toFixed(2)} times)` : ''}.
-              And a low damage tolerance leaves less margin for the blur that distance adds, so it gets a little extra
-              width. The plain rule would have suggested {showLen(forDistance.plainRuleMm)}; the figure used here is{' '}
+              Two adjustments are added on top, and both only ever make it bigger: denser codes have smaller squares,
+              and low damage tolerance leaves less margin. Plain rule {showLen(forDistance.plainRuleMm)}, used here{' '}
               {showLen(forDistance.widthMm)}.
             </p>
           </div>

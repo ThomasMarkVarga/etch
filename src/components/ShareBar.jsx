@@ -46,9 +46,8 @@ export default function ShareBar({ urlState, typeId, hasCode }) {
             </button>
           </div>
           <p className="hint centered" id="share-why">
-            Link sharing is switched off for {type.label.toLowerCase()} codes, because a link holds the contents and
-            links end up in chat logs, browser history and screenshots. The settings file saves to your own device
-            instead, and reopens here to rebuild the same code.
+            Off for {type.label.toLowerCase()} codes: a link holds the contents, and links end up in chat logs and
+            screenshots. The settings file stays on your device.
           </p>
         </>
       ) : (
@@ -60,8 +59,8 @@ export default function ShareBar({ urlState, typeId, hasCode }) {
             </button>
           </div>
           <p className="hint centered">
-            The link holds everything: the text, the colours, the size. Open it on another machine and you get exactly
-            this code back. It is a plain link to this page, not a redirect, and the code itself never points here.
+            The link holds the text, colours and size, so it rebuilds exactly this code. The code itself never points
+            here.
           </p>
         </>
       )}

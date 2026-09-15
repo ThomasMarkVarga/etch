@@ -82,9 +82,8 @@ export function TrueSizePreview({ svg, widthMm, alt }) {
         <img src={src} alt={alt} style={{ width: `${widthMm}mm`, height: `${widthMm}mm`, display: 'block' }} />
       </div>
       <p className="hint">
-        Shown at {widthMm}mm across, including the clear border. Hold a ruler to the screen to check: browsers assume a
-        fixed pixel density, so on a scaled or high-density display this can be out by a few percent. The exported PDF
-        is exact.
+        Shown at {widthMm}mm, border included. Browsers assume a fixed pixel density, so this can be out by a few
+        percent on a scaled display. The PDF is exact.
       </p>
     </div>
   );

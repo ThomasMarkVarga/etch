@@ -102,9 +102,8 @@ export default function ExportBar({ svg, result, typeLabel, verification, style,
       </div>
 
       <p className="hint centered">
-        SVG is the one to send a printer: it is vector, so it stays sharp at any size. These PNG sizes are chosen so
-        each square is a whole number of pixels ({sizes.map((s) => s.modulePx).join(', ')} px respectively), because a
-        square that lands on half a pixel comes out blurred. The PDF is vector at exactly {widthMm}mm.
+        Send a printer the SVG or the PDF: both are vector. The PNG sizes give each square a whole number of pixels, so
+        nothing lands on a half pixel and blurs.
       </p>
 
       {error && (
