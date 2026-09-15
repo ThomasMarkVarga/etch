@@ -150,10 +150,12 @@ const HUES = [
   so this reads as a deliberate display face rather than a workaround.
 
   Coordinates are fractions of the cap height: x from 0 to WIDTH, y from 0 at
-  the cap line to 1 at the baseline. STROKE is the stem thickness. Only the
-  letters the card actually uses are defined; anything else is skipped rather
-  than guessed at, and the assertion below catches a headline that needs a
-  glyph nobody has drawn yet.
+  the cap line to 1 at the baseline. STROKE is the stem thickness.
+
+  This is a partial alphabet, covering the letters the card uses plus a few
+  kept from an earlier draft. drawText throws on a letter nobody has drawn
+  rather than silently dropping it, so a copy change that needs a new glyph
+  fails the build instead of shipping a headline with a hole in it.
 */
 const STROKE = 0.2;
 const WIDTH = 0.62;
@@ -348,25 +350,18 @@ if (!check.pass) {
   drawText(og, 'NEVER REPRINT.', left, 326, headline, ACCENT);
 
   /*
-    A call to action, in a filled block.
+    No call-to-action button.
 
-    The palette strip that used to sit here was decoration. A social card has
-    one job, and a validator is right to want something on it that tells you
-    what to do, not just what the thing is called.
+    A validator asks for one, and an earlier version had a MAKE ONE FREE block
+    here. It came out: the card is an image, not a page, and nothing inside it
+    is clickable. A element that looks like a button in a link preview invites a
+    tap that does nothing, and the whole card is already the link. The headline
+    carries the message; the button only added a thing that behaves unlike what
+    it looks like.
+
+    The palette stays as a quiet colour signature.
   */
-  const ctaText = 'MAKE ONE FREE';
-  const ctaCap = 30;
-  const ctaPadX = 30;
-  const ctaPadY = 22;
-  const ctaW = Math.round(measure(ctaText, ctaCap) + ctaPadX * 2);
-  const ctaH = ctaCap + ctaPadY * 2;
-  const ctaY = 452;
-  fillRect(og, left, ctaY, ctaW, ctaH, ACCENT);
-  drawText(og, ctaText, left + ctaPadX, ctaY + ctaPadY, ctaCap, WHITE);
-
-  // The palette keeps a smaller role beside the button, as a colour signature
-  // rather than the main event.
-  HUES.forEach((hue, i) => fillRect(og, left + ctaW + 34 + i * 30, ctaY + ctaH / 2 - 10, 20, 20, hue));
+  HUES.forEach((hue, i) => fillRect(og, left + i * 52, 458, 36, 36, hue));
 
   await writeFile(join(publicDir, 'og.png'), encodePng(og.data, W, H));
   console.log(`og.png written (1200x630, code version ${result.version}, verified)`);
