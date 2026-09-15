@@ -141,45 +141,153 @@ const HUES = [
 ];
 
 /*
-  A geometric wordmark, drawn from rectangles.
+  A stencil alphabet, drawn as polygons.
 
-  There is no font rasteriser in Node, and pulling one in to set four letters
-  would be a poor trade. E, T, C and H all happen to be straight-stroke shapes
-  a stencil could cut, so they are drawn directly. Squared-off letterforms also
-  suit an app whose whole subject is squares on a grid, which makes this a
-  deliberate look rather than a workaround for a missing dependency.
+  There is no font rasteriser in Node, and adding one to set two lines of
+  display type would be a heavy dependency for a build-time image. Instead the
+  letters are defined as polygons in a unit box and filled directly. Squared,
+  stencil-cut letterforms suit an app whose entire subject is squares on a grid,
+  so this reads as a deliberate display face rather than a workaround.
 
-  Each entry returns [x, y, width, height] rectangles in glyph-local space.
+  Coordinates are fractions of the cap height: x from 0 to WIDTH, y from 0 at
+  the cap line to 1 at the baseline. STROKE is the stem thickness. Only the
+  letters the card actually uses are defined; anything else is skipped rather
+  than guessed at, and the assertion below catches a headline that needs a
+  glyph nobody has drawn yet.
 */
+const STROKE = 0.2;
+const WIDTH = 0.62;
+
+/** @param {number} x @param {number} y @param {number} w @param {number} h */
+const box = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+
+const S = STROKE;
+const W = WIDTH;
+
+/** Each glyph is a union of polygons. @type {Record<string, number[][][]>} */
 const GLYPHS = {
-  E: (w, h, s) => [[0, 0, s, h], [0, 0, w, s], [0, (h - s) / 2, w * 0.82, s], [0, h - s, w, s]],
-  T: (w, h, s) => [[0, 0, w, s], [(w - s) / 2, 0, s, h]],
-  C: (w, h, s) => [[0, 0, w, s], [0, 0, s, h], [0, h - s, w, s]],
-  H: (w, h, s) => [[0, 0, s, h], [w - s, 0, s, h], [0, (h - s) / 2, w, s]],
+  B: [
+    box(0, 0, S, 1), box(0, 0, W - S * 0.6, S), box(0, (1 - S) / 2, W - S * 0.6, S),
+    box(0, 1 - S, W - S * 0.6, S), box(W - S, S, S, (1 - S) / 2 - S), box(W - S, (1 + S) / 2, S, (1 - S) / 2 - S),
+  ],
+  C: [box(0, 0, W, S), box(0, 0, S, 1), box(0, 1 - S, W, S)],
+  E: [box(0, 0, S, 1), box(0, 0, W, S), box(0, (1 - S) / 2, W * 0.82, S), box(0, 1 - S, W, S)],
+  H: [box(0, 0, S, 1), box(W - S, 0, S, 1), box(0, (1 - S) / 2, W, S)],
+  I: [box((W - S) / 2, 0, S, 1)],
+  // The diagonal is a parallelogram from the top of the left stem to the foot
+  // of the right one, which is what makes an N an N rather than an H.
+  N: [box(0, 0, S, 1), box(W - S, 0, S, 1), [[0, 0], [S, 0], [W, 1], [W - S, 1]]],
+  O: [box(0, 0, W, S), box(0, 1 - S, W, S), box(0, 0, S, 1), box(W - S, 0, S, 1)],
+  P: [box(0, 0, S, 1), box(0, 0, W, S), box(0, (1 - S) / 2, W, S), box(W - S, S, S, (1 - S) / 2 - S)],
+  R: [
+    box(0, 0, S, 1), box(0, 0, W, S), box(0, (1 - S) / 2, W, S), box(W - S, S, S, (1 - S) / 2 - S),
+    [[W - S * 1.7, (1 + S) / 2], [W - S * 0.7, (1 + S) / 2], [W, 1], [W - S, 1]],
+  ],
+  T: [box(0, 0, W, S), box((W - S) / 2, 0, S, 1)],
+  V: [[[0, 0], [S, 0], [W / 2 + S / 2, 1], [W / 2 - S / 2, 1]], [[W - S, 0], [W, 0], [W / 2 + S / 2, 1], [W / 2 - S / 2, 1]]],
+  '.': [box(0, 1 - S, S, S)],
+  ' ': [],
 };
 
+/** Advance width of each glyph, as a fraction of cap height. */
+const ADVANCE = { '.': STROKE * 1.6, ' ': WIDTH * 0.55 };
+const TRACKING = 0.17;
+
 /**
+ * Width a string will occupy at a given cap height.
+ * @param {string} text @param {number} h
+ */
+function measure(text, h) {
+  let total = 0;
+  for (const ch of text) total += (ADVANCE[ch] ?? WIDTH) * h + TRACKING * h;
+  return total - TRACKING * h;
+}
+
+/**
+ * Draw a string, anti-aliased.
+ *
+ * The diagonals in N, R and V would be visibly jagged filled at device
+ * resolution, so coverage is sampled on a 3x3 subpixel grid and composited,
+ * the same approach the app's own rasteriser uses for dot-style modules.
+ *
  * @param {{data: Uint8ClampedArray, width: number, height: number}} dst
  * @param {string} text
- * @param {number} x @param {number} y @param {number} h glyph height
+ * @param {number} x @param {number} y cap-line origin, in pixels
+ * @param {number} h cap height in pixels
  * @param {[number, number, number]} colour
- * @returns {number} x coordinate just past the final glyph
+ * @returns {number} x just past the final glyph
  */
-function drawWord(dst, text, x, y, h, colour) {
-  const s = Math.round(h * 0.22);
-  const w = Math.round(h * 0.7);
-  const gap = Math.round(h * 0.2);
+function drawText(dst, text, x, y, h, colour) {
+  const polys = [];
   let cursor = x;
   for (const ch of text) {
-    const parts = GLYPHS[ch];
-    if (parts) {
-      for (const [dx, dy, rw, rh] of parts(w, h, s)) {
-        fillRect(dst, Math.round(cursor + dx), Math.round(y + dy), Math.round(rw), Math.round(rh), colour);
-      }
-    }
-    cursor += w + gap;
+    const glyph = GLYPHS[ch.toUpperCase()];
+    if (glyph === undefined) throw new Error(`No stencil glyph for ${JSON.stringify(ch)}. Add one to GLYPHS.`);
+    for (const poly of glyph) polys.push(poly.map(([px, py]) => [cursor + px * h, y + py * h]));
+    cursor += (ADVANCE[ch] ?? WIDTH) * h + TRACKING * h;
   }
-  return cursor - gap;
+  fillPolygons(dst, polys, colour);
+  return cursor - TRACKING * h;
+}
+
+/**
+ * Even-odd point-in-polygon test.
+ * @param {number[][]} poly @param {number} px @param {number} py
+ */
+function inPolygon(poly, px, py) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Fill the union of polygons with 3x3 supersampled coverage.
+ * @param {{data: Uint8ClampedArray, width: number, height: number}} dst
+ * @param {number[][][]} polys
+ * @param {[number, number, number]} colour
+ */
+function fillPolygons(dst, polys, [r, g, b]) {
+  if (polys.length === 0) return;
+  const SS = 3;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const poly of polys) {
+    for (const [px, py] of poly) {
+      if (px < minX) minX = px;
+      if (px > maxX) maxX = px;
+      if (py < minY) minY = py;
+      if (py > maxY) maxY = py;
+    }
+  }
+  const x0 = Math.max(0, Math.floor(minX));
+  const y0 = Math.max(0, Math.floor(minY));
+  const x1 = Math.min(dst.width, Math.ceil(maxX) + 1);
+  const y1 = Math.min(dst.height, Math.ceil(maxY) + 1);
+
+  for (let py = y0; py < y1; py++) {
+    for (let px = x0; px < x1; px++) {
+      let hits = 0;
+      for (let sy = 0; sy < SS; sy++) {
+        const fy = py + (sy + 0.5) / SS;
+        for (let sx = 0; sx < SS; sx++) {
+          const fx = px + (sx + 0.5) / SS;
+          for (const poly of polys) {
+            if (inPolygon(poly, fx, fy)) { hits++; break; }
+          }
+        }
+      }
+      if (!hits) continue;
+      const a = hits / (SS * SS);
+      const o = (py * dst.width + px) * 4;
+      dst.data[o] = dst.data[o] * (1 - a) + r * a;
+      dst.data[o + 1] = dst.data[o + 1] * (1 - a) + g * a;
+      dst.data[o + 2] = dst.data[o + 2] * (1 - a) + b * a;
+      dst.data[o + 3] = 255;
+    }
+  }
 }
 
 // A real code for the real site, verified before it is written to disk.
@@ -198,31 +306,35 @@ if (!check.pass) {
   // Accent spine down the left edge, the same device the explainer cards use.
   fillRect(og, 0, 0, 16, H, ACCENT);
 
-  // A real code for the real site, already verified above.
-  const modulePx = Math.floor(392 / (result.size + 8));
+  // The code, right-hand side: a real one for the real site, verified above.
+  const modulePx = Math.floor(300 / (result.size + 8));
   const qr = rasterize(result.matrix, result.version, { modulePx });
-  const qrX = W - qr.width - 96;
+  const qrX = W - qr.width - 92;
   const qrY = Math.round((H - qr.height) / 2);
-
-  // White plate behind it, so the quiet zone reads as paper against the page.
-  fillRect(og, qrX - 30, qrY - 30, qr.width + 60, qr.height + 60, WHITE);
+  fillRect(og, qrX - 26, qrY - 26, qr.width + 52, qr.height + 52, WHITE);
   blit(og, qr, qrX, qrY);
 
-  // Wordmark and palette are set as one block, optically centred against the
-  // code on the right.
-  const wordTop = 232;
-  const wordEnd = drawWord(og, 'ETCH', 96, wordTop, 128, INK);
+  const left = 96;
 
-  // A full stop in the accent colour, echoing the hero's coloured emphasis.
-  fillRect(og, wordEnd + 20, wordTop + 128 - 30, 30, 30, ACCENT);
+  // Wordmark, small, above the headline.
+  const markTop = 134;
+  const markEnd = drawText(og, 'ETCH', left, markTop, 46, INK);
+  fillRect(og, Math.round(markEnd + 10), markTop + 46 - 9, 9, 9, ACCENT);
+
+  /*
+    The headline. A social card gets about one second of attention, and the
+    validators are right that a card with no readable claim on it is a wasted
+    slot, so the promise goes in the image rather than relying on the
+    description text beside it.
+  */
+  const headline = 60;
+  drawText(og, 'PRINT ONCE.', left, 236, headline, INK);
+  drawText(og, 'NEVER REPRINT.', left, 326, headline, ACCENT);
 
   // The payload palette, one square per colour.
-  HUES.forEach((hue, i) => fillRect(og, 96 + i * 56, wordTop + 198, 40, 40, hue));
-
-  // No stand-in bars for the strapline. Grey rules at text size read as content
-  // that failed to load, which is the opposite of the impression this image has
-  // to make, and the description is already shown as real text beside it by
-  // every client that renders the card.
+  // Balanced against the code on the right: the block runs 134 to 494 in a
+  // 630 tall canvas, so the margins above and below match.
+  HUES.forEach((hue, i) => fillRect(og, left + i * 52, 458, 36, 36, hue));
 
   await writeFile(join(publicDir, 'og.png'), encodePng(og.data, W, H));
   console.log(`og.png written (1200x630, code version ${result.version}, verified)`);
