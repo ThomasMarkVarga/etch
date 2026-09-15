@@ -193,6 +193,11 @@ const GLYPHS = {
     box(S * 0.55, 0.58, W - S * 1.1, S * 0.9),
   ],
   F: [box(0, 0, S, 1), box(0, 0, W, S), box(0, (1 - S) / 2, W * 0.82, S)],
+  // The spur is what stops a squared G reading as a C.
+  G: [
+    box(0, 0, W, S), box(0, 0, S, 1), box(0, 1 - S, W, S),
+    box(W - S, 0.5, S, 0.5), box(W * 0.52, 0.5 - S / 2, W * 0.48, S),
+  ],
   K: [
     box(0, 0, S, 1),
     [[W - S, 0], [W, 0], [S + S * 0.9, 0.52], [S, 0.52]],
@@ -204,11 +209,14 @@ const GLYPHS = {
     [[W * 1.18 - S, 0], [W * 1.18, 0], [W * 0.59 + S / 2, 0.72], [W * 0.59 - S / 2, 0.72]],
   ],
   '.': [box(0, 1 - S, S, S)],
+  // The tail drops below the baseline, which the bounding box in fillPolygons
+  // accounts for, so no clipping.
+  ',': [box(0, 1 - S, S, S), [[S * 0.15, 1], [S, 1], [S * 0.45, 1 + S * 0.85], [0, 1 + S * 0.85]]],
   ' ': [],
 };
 
 /** Advance width of each glyph, as a fraction of cap height. */
-const ADVANCE = { '.': STROKE * 1.6, ' ': WIDTH * 0.55, M: WIDTH * 1.18 };
+const ADVANCE = { '.': STROKE * 1.6, ',': STROKE * 1.6, ' ': WIDTH * 0.55, M: WIDTH * 1.18 };
 const TRACKING = 0.17;
 
 /**
@@ -345,9 +353,19 @@ if (!check.pass) {
     slot, so the promise goes in the image rather than relying on the
     description text beside it.
   */
-  const headline = 60;
-  drawText(og, 'PRINT ONCE.', left, 236, headline, INK);
-  drawText(og, 'NEVER REPRINT.', left, 326, headline, ACCENT);
+  const headline = 52;
+  const lineOne = 'GENERATE, PRINT,';
+  const lineTwo = 'NEVER REPRINT.';
+
+  // The headline must not run under the code's white plate.
+  const room = qrX - 26 - left - 24;
+  for (const line of [lineOne, lineTwo]) {
+    const w = measure(line, headline);
+    if (w > room) throw new Error(`Headline "${line}" is ${Math.round(w)}px wide, ${Math.round(room)}px available.`);
+  }
+
+  drawText(og, lineOne, left, 240, headline, INK);
+  drawText(og, lineTwo, left, 318, headline, ACCENT);
 
   /*
     No call-to-action button.
