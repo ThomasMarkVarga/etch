@@ -185,12 +185,28 @@ const GLYPHS = {
   ],
   T: [box(0, 0, W, S), box((W - S) / 2, 0, S, 1)],
   V: [[[0, 0], [S, 0], [W / 2 + S / 2, 1], [W / 2 - S / 2, 1]], [[W - S, 0], [W, 0], [W / 2 + S / 2, 1], [W / 2 - S / 2, 1]]],
+  A: [
+    [[0, 1], [S, 1], [W / 2 + S / 2, 0], [W / 2 - S / 2, 0]],
+    [[W - S, 1], [W, 1], [W / 2 + S / 2, 0], [W / 2 - S / 2, 0]],
+    box(S * 0.55, 0.58, W - S * 1.1, S * 0.9),
+  ],
+  F: [box(0, 0, S, 1), box(0, 0, W, S), box(0, (1 - S) / 2, W * 0.82, S)],
+  K: [
+    box(0, 0, S, 1),
+    [[W - S, 0], [W, 0], [S + S * 0.9, 0.52], [S, 0.52]],
+    [[S, 0.48], [S + S * 0.9, 0.48], [W, 1], [W - S, 1]],
+  ],
+  M: [
+    box(0, 0, S, 1), box(W * 1.18 - S, 0, S, 1),
+    [[0, 0], [S, 0], [W * 0.59 + S / 2, 0.72], [W * 0.59 - S / 2, 0.72]],
+    [[W * 1.18 - S, 0], [W * 1.18, 0], [W * 0.59 + S / 2, 0.72], [W * 0.59 - S / 2, 0.72]],
+  ],
   '.': [box(0, 1 - S, S, S)],
   ' ': [],
 };
 
 /** Advance width of each glyph, as a fraction of cap height. */
-const ADVANCE = { '.': STROKE * 1.6, ' ': WIDTH * 0.55 };
+const ADVANCE = { '.': STROKE * 1.6, ' ': WIDTH * 0.55, M: WIDTH * 1.18 };
 const TRACKING = 0.17;
 
 /**
@@ -331,10 +347,26 @@ if (!check.pass) {
   drawText(og, 'PRINT ONCE.', left, 236, headline, INK);
   drawText(og, 'NEVER REPRINT.', left, 326, headline, ACCENT);
 
-  // The payload palette, one square per colour.
-  // Balanced against the code on the right: the block runs 134 to 494 in a
-  // 630 tall canvas, so the margins above and below match.
-  HUES.forEach((hue, i) => fillRect(og, left + i * 52, 458, 36, 36, hue));
+  /*
+    A call to action, in a filled block.
+
+    The palette strip that used to sit here was decoration. A social card has
+    one job, and a validator is right to want something on it that tells you
+    what to do, not just what the thing is called.
+  */
+  const ctaText = 'MAKE ONE FREE';
+  const ctaCap = 30;
+  const ctaPadX = 30;
+  const ctaPadY = 22;
+  const ctaW = Math.round(measure(ctaText, ctaCap) + ctaPadX * 2);
+  const ctaH = ctaCap + ctaPadY * 2;
+  const ctaY = 452;
+  fillRect(og, left, ctaY, ctaW, ctaH, ACCENT);
+  drawText(og, ctaText, left + ctaPadX, ctaY + ctaPadY, ctaCap, WHITE);
+
+  // The palette keeps a smaller role beside the button, as a colour signature
+  // rather than the main event.
+  HUES.forEach((hue, i) => fillRect(og, left + ctaW + 34 + i * 30, ctaY + ctaH / 2 - 10, 20, 20, hue));
 
   await writeFile(join(publicDir, 'og.png'), encodePng(og.data, W, H));
   console.log(`og.png written (1200x630, code version ${result.version}, verified)`);
