@@ -7,10 +7,12 @@ import {
   checkLogo,
   logoCoverage,
   eccForLogo,
-  LOGO_COVERAGE_CEILING,
+  logoCeiling,
   normaliseStyle,
   CONTRAST,
   EYE_PAIRS,
+  maxLogoRatio,
+  planForLogo,
 } from '../style.js';
 import { classifyModules, isStructural } from '../patterns.js';
 
@@ -92,13 +94,22 @@ describe('logo coverage', () => {
     expect(over.message).toMatch(/covers/i);
   });
 
-  it('keeps every ceiling below the nominal recovery budget', async () => {
+  it('keeps every ceiling well below the nominal recovery budget', async () => {
     // The whole point: the budget also has to absorb print defects and dirt,
     // so the app must never spend all of it on decoration.
     const nominal = { L: 0.07, M: 0.15, Q: 0.25, H: 0.3 };
     for (const level of ['L', 'M', 'Q', 'H']) {
-      expect(LOGO_COVERAGE_CEILING[level]).toBeLessThan(nominal[level]);
-      expect(LOGO_COVERAGE_CEILING[level]).toBeGreaterThan(nominal[level] * 0.4);
+      for (const size of [21, 33, 57, 105]) {
+        const ceiling = logoCeiling(level, size);
+        expect(ceiling).toBeLessThan(nominal[level] * 0.7);
+        expect(ceiling).toBeGreaterThan(nominal[level] * 0.3);
+      }
+    }
+  });
+
+  it('allows a bigger logo on a bigger code, because the damage spreads across more blocks', async () => {
+    for (const level of ['L', 'M', 'Q', 'H']) {
+      expect(logoCeiling(level, 85)).toBeGreaterThan(logoCeiling(level, 25));
     }
   });
 
@@ -207,5 +218,180 @@ describe('finding the culprit when a style breaks the code', () => {
     const result = encode(TEXT);
     const style = normaliseStyle({}).style;
     expect(await findStyleCulprit(result.matrix, result.version, TEXT, style)).toBeNull();
+  });
+});
+
+describe('scaling the code so a logo does not break it', () => {
+  const text = TEXT;
+  const logoAt = (sizeRatio, padding = 1) => ({
+    href: '',
+    sizeRatio,
+    padding,
+    shape: 'square',
+    plate: '#FFFFFF',
+  });
+
+  it('maxLogoRatio returns a size that actually passes the coverage check', () => {
+    for (const ecc of ['L', 'M', 'Q', 'H']) {
+      for (const size of [21, 25, 29, 33, 45, 77]) {
+        const ratio = maxLogoRatio(size, ecc, 1);
+        if (ratio <= 0) continue;
+        const check = checkLogo(size, logoAt(ratio), ecc);
+        expect(check.ok, `${ecc} at size ${size}, ratio ${ratio.toFixed(3)}`).toBe(true);
+      }
+    }
+  });
+
+  it('maxLogoRatio is the largest such size: one step bigger fails', () => {
+    for (const ecc of ['M', 'Q', 'H']) {
+      const size = 33;
+      const ratio = maxLogoRatio(size, ecc, 1);
+      // One whole module wider is over the line, since coverage counts whole
+      // modules and the maximum is expressed in them.
+      const bigger = ratio + 1.01 / size;
+      expect(checkLogo(size, logoAt(bigger), ecc).ok, `${ecc} should refuse ${bigger.toFixed(3)}`).toBe(false);
+    }
+  });
+
+  it('a logo at the maximum for its level still decodes', async () => {
+    for (const ecc of ['Q', 'H']) {
+      const result = encode(text, { ecc, boostEcc: false });
+      const ratio = maxLogoRatio(result.size, ecc, 1);
+      const check = await verify(result.matrix, result.version, text, {
+        style: { ...normaliseStyle({}).style, logo: logoAt(ratio) },
+      });
+      expect(check.pass, `${ecc} at its maximum logo size (${ratio.toFixed(3)}) should decode`).toBe(true);
+    }
+  });
+
+  it('raises the correction level rather than letting the logo break the code', () => {
+    const size = 33;
+    // Too big for Medium, fine for Quartile.
+    const plan = planForLogo({ size, logo: logoAt(0.22), ecc: 'M' });
+    expect(plan.raisedEcc).toBe(true);
+    expect(['Q', 'H']).toContain(plan.ecc);
+    expect(plan.shrankLogo).toBe(false);
+    expect(plan.logo.sizeRatio).toBe(0.22);
+    expect(plan.reason).toMatch(/Correction raised from Medium/);
+    expect(checkLogo(size, plan.logo, plan.ecc).ok).toBe(true);
+  });
+
+  it('leaves a small logo and a sufficient level alone', () => {
+    const size = 33;
+    const plan = planForLogo({ size, logo: logoAt(0.1), ecc: 'H' });
+    expect(plan.raisedEcc).toBe(false);
+    expect(plan.shrankLogo).toBe(false);
+    expect(plan.reason).toBeNull();
+    expect(plan.ecc).toBe('H');
+  });
+
+  it('never lowers a level the user chose deliberately', () => {
+    const plan = planForLogo({ size: 33, logo: logoAt(0.06), ecc: 'H' });
+    expect(plan.ecc).toBe('H');
+  });
+
+  it('shrinks the logo only when even the highest level cannot carry it', () => {
+    const size = 33;
+    const plan = planForLogo({ size, logo: logoAt(0.6), ecc: 'M' });
+    expect(plan.ecc).toBe('H');
+    expect(plan.shrankLogo).toBe(true);
+    expect(plan.logo.sizeRatio).toBeLessThan(0.6);
+    expect(checkLogo(size, plan.logo, plan.ecc).ok).toBe(true);
+    expect(plan.reason).toMatch(/scaled down/);
+  });
+
+  it('whatever the plan returns, the result always passes its own check', () => {
+    for (const size of [21, 25, 33, 57]) {
+      for (const ecc of ['L', 'M', 'Q', 'H']) {
+        for (const ratio of [0.05, 0.12, 0.2, 0.3, 0.4]) {
+          const plan = planForLogo({ size, logo: logoAt(ratio), ecc });
+          expect(
+            checkLogo(size, plan.logo, plan.ecc).ok,
+            `size ${size}, ${ecc}, ratio ${ratio} produced a plan that fails its own check`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('a planned logo decodes at the size the plan chose', async () => {
+    const result = encode(text, { ecc: 'M', boostEcc: false });
+    const plan = planForLogo({ size: result.size, logo: logoAt(0.45), ecc: 'M' });
+    // Re-encode at the level the plan asked for, which is what the app does.
+    const raised = encode(text, { ecc: plan.ecc, boostEcc: false });
+    const check = await verify(raised.matrix, raised.version, text, {
+      style: { ...normaliseStyle({}).style, logo: plan.logo },
+    });
+    expect(check.pass).toBe(true);
+  });
+});
+
+describe('the ceiling is calibrated against real decoding, not guessed', () => {
+  /*
+    This is the test that earns the numbers in logoCeiling. The previous flat
+    55%-of-budget figure passed every unit test and still produced logos that
+    failed the scan test, because nothing checked the ceiling against an actual
+    decode. This does.
+
+    One payload per version band, so the sweep covers the small codes where a
+    centre logo is most dangerous and the large ones where it is least.
+  */
+  const CASES = [
+    ['https://a.co/x', 'a tiny code'],
+    ['https://example.com/menu', 'a small code'],
+    ['https://cafeauabuna.ro/meniu?masa=12', 'a typical code'],
+    [`https://example.com/${'a'.repeat(60)}`, 'a long code'],
+    [`https://example.com/${'a'.repeat(160)}`, 'a very long code'],
+  ];
+
+  for (const ecc of ['L', 'M', 'Q', 'H']) {
+    for (const [text, label] of CASES) {
+      it(`${label} at level ${ecc}: a logo at the ceiling still decodes`, async () => {
+        const result = encode(text, { ecc, boostEcc: false });
+
+        // Skip any code that cannot be read even without a logo: that is a
+        // density problem the print panel reports, not a logo problem.
+        const bare = await verify(result.matrix, result.version, text);
+        if (!bare.pass) return;
+
+        const ratio = maxLogoRatio(result.size, ecc, 1);
+        if (ratio <= 0.04) return; // no room for a logo at all on this code
+
+        const logo = { href: '', sizeRatio: ratio, padding: 1, shape: 'square', plate: '#FFFFFF' };
+        const check = await verify(result.matrix, result.version, text, {
+          style: { ...normaliseStyle({}).style, logo },
+        });
+
+        expect(
+          check.pass,
+          `v${result.version} ${ecc}: a logo at the ${(logoCeiling(ecc, result.size) * 100).toFixed(1)}% ceiling ` +
+            `failed under ${check.failedIds.join(', ')}. The ceiling is too loose.`,
+        ).toBe(true);
+      });
+    }
+  }
+});
+
+describe('the decoder is told the right polarity', () => {
+  /*
+    Verification tells jsQR which way round the code is, to avoid paying for a
+    failed attempt followed by an inverted retry. The mode names are not
+    symmetrical: 'onlyInvert' sounds like the counterpart of 'dontInvert' and is
+    not, so both directions are pinned here.
+  */
+  const text = TEXT;
+
+  it('verifies a normal dark-on-light code', async () => {
+    const result = encode(text);
+    const check = await verify(result.matrix, result.version, text, { style: normaliseStyle({}).style });
+    expect(check.pass).toBe(true);
+  });
+
+  it('still verifies a light-on-dark code, which the fast path must not break', async () => {
+    const result = encode(text);
+    const { style } = normaliseStyle({ foreground: '#FFFFFF', background: '#000000' });
+    const check = await verify(result.matrix, result.version, text, { style });
+    expect(check.pass, `inverted code failed under ${check.failedIds.join(', ')}`).toBe(true);
+    for (const c of check.conditions) expect(c.got).toBe(text);
   });
 });

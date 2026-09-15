@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import Icon from './Icon.jsx';
 
 /**
@@ -22,6 +23,17 @@ import Icon from './Icon.jsx';
  * @param {React.ReactNode} [props.empty]
  */
 export default function CodePreview({ svg, alt, showQuietZoneGuide = true, empty }) {
+  /*
+    Percent-encoding the SVG is not free. A dense code in dot style is a few
+    hundred kilobytes of path data, and doing this inline in the JSX re-encoded
+    the whole string on every render, including renders that had nothing to do
+    with the code. Keyed on the markup, so it runs once per actual change.
+  */
+  const src = useMemo(
+    () => (svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.svg)}` : null),
+    [svg?.svg],
+  );
+
   if (!svg) {
     return (
       <div className="preview-canvas" style={{ minHeight: '18rem' }}>
@@ -38,7 +50,7 @@ export default function CodePreview({ svg, alt, showQuietZoneGuide = true, empty
       <div className={showQuietZoneGuide ? 'quiet-zone-guide' : undefined} style={{ width: '100%', maxWidth: '21rem' }}>
         <img
           className="preview-code"
-          src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.svg)}`}
+          src={src}
           alt={alt}
           width={512}
           height={512}
@@ -58,15 +70,16 @@ export default function CodePreview({ svg, alt, showQuietZoneGuide = true, empty
  * so rather than implying a precision the browser cannot deliver.
  */
 export function TrueSizePreview({ svg, widthMm, alt }) {
+  const src = useMemo(
+    () => (svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.svg)}` : null),
+    [svg?.svg],
+  );
+
   if (!svg) return null;
   return (
     <div className="stack-sm">
       <div className="truesize-sheet" style={{ minHeight: `${Math.min(widthMm + 24, 240)}mm` }}>
-        <img
-          src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.svg)}`}
-          alt={alt}
-          style={{ width: `${widthMm}mm`, height: `${widthMm}mm`, display: 'block' }}
-        />
+        <img src={src} alt={alt} style={{ width: `${widthMm}mm`, height: `${widthMm}mm`, display: 'block' }} />
       </div>
       <p className="hint">
         Shown at {widthMm}mm across, including the clear border. Hold a ruler to the screen to check: browsers assume a

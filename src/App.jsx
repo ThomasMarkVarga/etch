@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Icon from './components/Icon.jsx';
 import Notice from './components/Notice.jsx';
 import PayloadForm from './components/PayloadForm.jsx';
@@ -17,7 +17,7 @@ import { useEtch } from './hooks/useEtch.js';
 import { useTheme } from './hooks/useTheme.js';
 import { useUrlState } from './state/urlState.js';
 import { payloadType } from './payloads/index.js';
-import { DEFAULT_STYLE } from './core/style.js';
+import { DEFAULT_STYLE, planForLogo } from './core/style.js';
 
 const BatchMode = lazy(() => import('./components/BatchMode.jsx'));
 const Inspector = lazy(() => import('./components/Inspector.jsx'));
@@ -104,6 +104,51 @@ export default function App() {
 
   const raiseEccForLogo = useCallback((letter) => setEncoding((e) => ({ ...e, ecc: letter })), []);
 
+  /*
+    Adding a logo changes the code, not just the picture.
+
+    A logo covers squares, and those squares have to be rebuilt from the error
+    correction, so the code has to carry more of it. planForLogo works out the
+    level needed and, if even the highest level cannot cover the logo, the
+    largest logo the code can actually take. Both are applied here and both are
+    reported back, because a code that silently got denser is a code that
+    silently needs printing larger.
+
+    The level before the logo is remembered, so removing the logo gives back the
+    less dense code rather than leaving it permanently inflated.
+  */
+  const eccBeforeLogo = useRef(null);
+  const [logoPlanNote, setLogoPlanNote] = useState(null);
+
+  const setLogo = useCallback(
+    (logo) => {
+      if (!logo) {
+        setStyle((s) => ({ ...s, logo: null }));
+        setLogoPlanNote(null);
+        if (eccBeforeLogo.current) {
+          const restored = eccBeforeLogo.current;
+          eccBeforeLogo.current = null;
+          setEncoding((e) => ({ ...e, ecc: restored }));
+        }
+        return;
+      }
+
+      const size = etch.result?.size;
+      if (!size) {
+        setStyle((s) => ({ ...s, logo }));
+        return;
+      }
+
+      if (!eccBeforeLogo.current) eccBeforeLogo.current = encoding.ecc;
+
+      const plan = planForLogo({ size, logo, ecc: encoding.ecc });
+      setStyle((s) => ({ ...s, logo: plan.logo }));
+      if (plan.ecc !== encoding.ecc) setEncoding((e) => ({ ...e, ecc: plan.ecc }));
+      setLogoPlanNote(plan.reason);
+    },
+    [etch.result?.size, encoding.ecc],
+  );
+
   const altText = useMemo(() => {
     if (!etch.result) return 'No code yet';
     return `QR code holding a ${etch.type.label.toLowerCase()} payload. Version ${etch.result.version}, ${etch.result.size} by ${etch.result.size} squares, with the clear border included.`;
@@ -177,6 +222,8 @@ export default function App() {
                 revertCulprit={revertCulprit}
                 applyShrink={applyShrink}
                 raiseEccForLogo={raiseEccForLogo}
+                setLogo={setLogo}
+                logoPlanNote={logoPlanNote}
                 altText={altText}
                 urlState={urlState}
               />
@@ -223,6 +270,8 @@ function CreateMode({
   revertCulprit,
   applyShrink,
   raiseEccForLogo,
+  setLogo,
+  logoPlanNote,
   altText,
   urlState,
 }) {
@@ -255,6 +304,8 @@ function CreateMode({
           setStyle={setStyle}
           onReset={resetStyle}
           onRaiseEcc={raiseEccForLogo}
+          onLogoChange={setLogo}
+          logoPlanNote={logoPlanNote}
         />
         <PrintPanel etch={etch} print={print} setPrint={setPrint} />
       </div>

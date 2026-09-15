@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { tryEncode, headroom, suggestShrinks, naturalVersion } from '../core/encode.js';
 import { matrixToSvg } from '../core/render/matrixToSvg.js';
 import { normaliseStyle, checkContrast, checkLogo, eccForLogo } from '../core/style.js';
-import { verify, findStyleCulprit, warmDecoder } from '../core/verify.js';
+import { verifyAsync, warmVerifier } from '../core/verifyClient.js';
 import { buildPayload, validatePayload, payloadType } from '../payloads/index.js';
 
 /**
@@ -16,9 +16,40 @@ import { buildPayload, validatePayload, payloadType } from '../payloads/index.js
 
 const VERIFY_DEBOUNCE_MS = 260;
 
-// Begin fetching the decoder as soon as this module is evaluated, so it is
-// already in place by the time the first payload is typed.
-warmDecoder();
+/**
+ * How long to wait before working out the advisory hints.
+ *
+ * The live preview has to keep up with typing. The hints below it do not: they
+ * are suggestions, and a suggestion that arrives a quarter of a second after
+ * you stop typing is just as useful as one that arrives instantly.
+ *
+ * This matters because they are expensive. Both re-encode the whole payload to
+ * compare alternatives, and suggestShrinks does it up to four times, so on a
+ * long URL they added about 45ms to every keystroke on top of the 26ms the real
+ * encode costs. Deferring them keeps the typing path down to one encode.
+ */
+const HINT_DEBOUNCE_MS = 300;
+
+/**
+ * A value that lags behind, so expensive work keyed on it runs once the user
+ * pauses rather than on every keystroke.
+ * @template T
+ * @param {T} value
+ * @param {number} delay
+ * @returns {T}
+ */
+function useSettled(value, delay) {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return settled;
+}
+
+// Start the verification worker as soon as this module is evaluated, so the
+// first check does not also pay to boot it.
+warmVerifier();
 
 /**
  * @param {object} args
@@ -53,14 +84,21 @@ export function useEtch({ typeId, input, encoding, style: rawStyle }) {
 
   const room = useMemo(() => (result ? headroom(result) : null), [result]);
 
+  // Both of these re-encode the payload to compare alternatives, so they run on
+  // the settled text rather than on every keystroke.
+  const settledText = useSettled(text, HINT_DEBOUNCE_MS);
+
   const naturalV = useMemo(
-    () => (text && !hasBlockingIssue ? naturalVersion(text, encoding.ecc) : null),
-    [text, hasBlockingIssue, encoding.ecc],
+    () => (settledText && !hasBlockingIssue ? naturalVersion(settledText, encoding.ecc) : null),
+    [settledText, hasBlockingIssue, encoding.ecc],
   );
 
   const shrinks = useMemo(
-    () => (typeId === 'url' && text && !hasBlockingIssue ? suggestShrinks(text, encoding.ecc, encoding.minVersion) : []),
-    [typeId, text, hasBlockingIssue, encoding.ecc, encoding.minVersion],
+    () =>
+      typeId === 'url' && settledText && !hasBlockingIssue
+        ? suggestShrinks(settledText, encoding.ecc, encoding.minVersion)
+        : [],
+    [typeId, settledText, hasBlockingIssue, encoding.ecc, encoding.minVersion],
   );
 
   const contrast = useMemo(() => checkContrast(style), [style]);
@@ -115,13 +153,17 @@ export function useEtch({ typeId, input, encoding, style: rawStyle }) {
       const run = async () => {
         if (runId.current !== id) return;
         try {
-          const v = await verify(result.matrix, result.version, result.text, { style });
+          const { result: v, culprit: found } = await verifyAsync({
+            matrix: result.matrix,
+            version: result.version,
+            expected: result.text,
+            style,
+          });
           // A newer run started while this one was decoding, so its answer is
           // the one that belongs on screen.
           if (runId.current !== id) return;
           setVerification(v);
-          setCulprit(v.pass ? null : await findStyleCulprit(result.matrix, result.version, result.text, style));
-          if (runId.current !== id) return;
+          setCulprit(found);
           setVerifying(false);
         } catch (err) {
           // The decoder is fetched on demand, so a dropped connection or a

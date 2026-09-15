@@ -1253,3 +1253,19 @@ a.vcf-home:hover {
 .explainer-qa p {
   font-size: var(--fs-14);
 }
+
+/*
+  Skip layout and paint for the long explanatory sections until they are near
+  the viewport. They sit well below the fold and are pure prose, so there is no
+  reason for the browser to lay them out while someone is working at the top of
+  the page. The intrinsic size keeps the scrollbar from jumping as they resolve.
+*/
+.explainer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+
+.foot {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
+}

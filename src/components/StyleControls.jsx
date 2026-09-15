@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 import Notice from './Notice.jsx';
-import { SHAPE_COPY, LOGO_COVERAGE_CEILING, EYE_PAIRS } from '../core/style.js';
+import { SHAPE_COPY, EYE_PAIRS, maxLogoRatio } from '../core/style.js';
 
 /**
  * Styling, with the cost of each choice shown next to it.
@@ -20,7 +20,7 @@ const PRESETS = [
   { id: 'wine', label: 'Wine', fg: '#7F1D1D', bg: '#FFFFFF' },
 ];
 
-export default function StyleControls({ etch, style, setStyle, onReset, onRaiseEcc }) {
+export default function StyleControls({ etch, style, setStyle, onReset, onRaiseEcc, onLogoChange, logoPlanNote }) {
   const { contrast, logoCheck, suggestedEccForLogo, result } = etch;
   const set = (patch) => setStyle((s) => ({ ...s, ...patch }));
   const fileRef = useRef(null);
@@ -48,17 +48,21 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
     });
     if (!href) return;
 
-    set({
-      logo: {
-        href,
-        sizeRatio: 0.18,
-        padding: 1,
-        shape: 'square',
-        plate: style.background === 'transparent' ? '#FFFFFF' : style.background,
-        alt: file.name,
-      },
+    onLogoChange({
+      href,
+      sizeRatio: 0.18,
+      padding: 1,
+      shape: 'square',
+      plate: style.background === 'transparent' ? '#FFFFFF' : style.background,
+      alt: file.name,
     });
   };
+
+  // The largest logo this code could carry at the highest correction level.
+  // The slider stops here rather than letting someone drag into a size no
+  // amount of error correction can recover.
+  const ceilingRatio = result ? maxLogoRatio(result.size, 'H', style.logo?.padding ?? 1) : 0.35;
+  const sliderMax = Math.max(6, Math.floor(ceilingRatio * 100));
 
   return (
     <details className="disclosure">
@@ -282,7 +286,7 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
                   />
                   <span className="hint wrap-anywhere">{style.logo.alt}</span>
                 </span>
-                <button type="button" className="btn btn-sm" onClick={() => set({ logo: null })}>
+                <button type="button" className="btn btn-sm" onClick={() => onLogoChange(null)}>
                   <Icon name="trash" size={14} />
                   Remove
                 </button>
@@ -307,10 +311,14 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
                   className="range"
                   type="range"
                   min={5}
-                  max={35}
-                  value={Math.round(style.logo.sizeRatio * 100)}
-                  onChange={(e) => set({ logo: { ...style.logo, sizeRatio: Number(e.target.value) / 100 } })}
+                  max={sliderMax}
+                  value={Math.min(sliderMax, Math.round(style.logo.sizeRatio * 100))}
+                  onChange={(e) => onLogoChange({ ...style.logo, sizeRatio: Number(e.target.value) / 100 })}
                 />
+                <p className="hint">
+                  This code tops out at {sliderMax}%. Past that, the logo covers more squares than even the highest
+                  error correction can rebuild. Drag it up and the correction level rises to keep pace.
+                </p>
               </div>
 
               <div className="segmented" role="group" aria-label="Logo plate shape">
@@ -319,12 +327,18 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
                     key={sh}
                     type="button"
                     aria-pressed={style.logo.shape === sh}
-                    onClick={() => set({ logo: { ...style.logo, shape: sh } })}
+                    onClick={() => onLogoChange({ ...style.logo, shape: sh })}
                   >
                     {sh === 'square' ? 'Square plate' : 'Round plate'}
                   </button>
                 ))}
               </div>
+
+              {logoPlanNote && (
+                <Notice kind="info" word="Code adjusted">
+                  {logoPlanNote}
+                </Notice>
+              )}
 
               {logoCheck && result && (
                 <>
@@ -397,4 +411,3 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
   );
 }
 
-export { LOGO_COVERAGE_CEILING };

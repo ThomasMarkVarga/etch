@@ -59,6 +59,31 @@ export function rasterize(matrix, version, options = {}) {
   const height = width;
 
   const roles = classifyModules(version);
+
+  /*
+    Fast path for the default style.
+
+    When every module is an axis-aligned square and the colours are flat, each
+    module lands exactly on integer pixel boundaries, so there is nothing to
+    anti-alias and the 3x3 subpixel sampling below is 9 wasted tests per pixel.
+    Filling rectangles directly is roughly an order of magnitude cheaper, and it
+    is the path almost every code takes, because square black-on-white is both
+    the default and the right answer for most printing.
+
+    The slow path still handles dots, rounded corners, circular eyes and
+    gradients, where the soft edges genuinely matter to whether it decodes.
+  */
+  const isPlainSquare =
+    style.moduleShape === 'square' &&
+    style.eyeFrame === 'square' &&
+    style.eyeBall === 'square' &&
+    !style.gradient &&
+    !style.eyeColor;
+
+  if (isPlainSquare) {
+    return rasterizePlain(matrix, style, modulePx, drawLogoPlate);
+  }
+
   const bgTransparentWhite = style.background === 'transparent';
   const bg = rgbOf(bgTransparentWhite ? '#FFFFFF' : style.background, [255, 255, 255]);
   const fgSolid = rgbOf(style.foreground, [0, 0, 0]);
@@ -235,25 +260,7 @@ export function rasterize(matrix, version, options = {}) {
   // itself is not rasterised: the plate is what destroys modules, and treating
   // the whole plate as lost is the honest worst case.
   if (drawLogoPlate && style.logo) {
-    const boxW = style.logo.sizeRatio * size;
-    const plate = boxW + style.logo.padding * 2;
-    const c = (qz + size / 2) * modulePx;
-    const half = (plate / 2) * modulePx;
-    const plateRgb = rgbOf(style.logo.plate, [255, 255, 255]);
-    const y0 = Math.max(0, Math.floor(c - half));
-    const y1 = Math.min(height, Math.ceil(c + half));
-    const x0 = Math.max(0, Math.floor(c - half));
-    const x1 = Math.min(width, Math.ceil(c + half));
-    for (let py = y0; py < y1; py++) {
-      for (let px = x0; px < x1; px++) {
-        if (style.logo.shape === 'circle' && Math.hypot(px + 0.5 - c, py + 0.5 - c) > half) continue;
-        const o = (py * width + px) * 4;
-        data[o] = plateRgb[0];
-        data[o + 1] = plateRgb[1];
-        data[o + 2] = plateRgb[2];
-        data[o + 3] = 255;
-      }
-    }
+    paintLogoPlate(data, width, height, style, size, qz, modulePx);
   }
 
   return { data, width, height, modulePx };
@@ -264,6 +271,98 @@ function inRoundedRect(mx, my, x, y, w, h, r) {
   const dx = mx < x + r ? x + r - mx : mx > x + w - r ? mx - (x + w - r) : 0;
   const dy = my < y + r ? y + r - my : my > y + h - r ? my - (y + h - r) : 0;
   return dx === 0 || dy === 0 || dx * dx + dy * dy <= r * r;
+}
+
+/**
+ * The fast path: flat colours, square modules, integer pixel boundaries.
+ *
+ * Produces byte-identical output to the general path for this style, which the
+ * test in quietzone.test.js asserts directly.
+ *
+ * @param {boolean[][]} matrix
+ * @param {import('../style.js').StyleSpec} style
+ * @param {number} modulePx
+ * @param {boolean} drawLogoPlate
+ * @returns {RasterResult}
+ */
+function rasterizePlain(matrix, style, modulePx, drawLogoPlate) {
+  const size = matrix.length;
+  const qz = style.quietZone;
+  const total = size + qz * 2;
+  const width = total * modulePx;
+  const height = width;
+
+  const bg = rgbOf(style.background === 'transparent' ? '#FFFFFF' : style.background, [255, 255, 255]);
+  const fg = rgbOf(style.foreground, [0, 0, 0]);
+
+  const data = new Uint8ClampedArray(width * height * 4);
+
+  // Background: build one row, then copy it down. Copying a typed array is far
+  // cheaper than writing every pixel in JavaScript.
+  const row = new Uint8ClampedArray(width * 4);
+  for (let x = 0; x < width; x++) {
+    const o = x * 4;
+    row[o] = bg[0];
+    row[o + 1] = bg[1];
+    row[o + 2] = bg[2];
+    row[o + 3] = 255;
+  }
+  for (let y = 0; y < height; y++) data.set(row, y * width * 4);
+
+  // Dark modules, filled as whole rectangles.
+  for (let my = 0; my < size; my++) {
+    const rowOfModules = matrix[my];
+    const y0 = (my + qz) * modulePx;
+    for (let mx = 0; mx < size; mx++) {
+      if (!rowOfModules[mx]) continue;
+      const x0 = (mx + qz) * modulePx;
+      for (let y = y0; y < y0 + modulePx; y++) {
+        let o = (y * width + x0) * 4;
+        for (let x = 0; x < modulePx; x++) {
+          data[o] = fg[0];
+          data[o + 1] = fg[1];
+          data[o + 2] = fg[2];
+          data[o + 3] = 255;
+          o += 4;
+        }
+      }
+    }
+  }
+
+  if (drawLogoPlate && style.logo) {
+    paintLogoPlate(data, width, height, style, size, qz, modulePx);
+  }
+
+  return { data, width, height, modulePx };
+}
+
+/**
+ * The plate behind a centre logo, shared by both raster paths.
+ * @param {Uint8ClampedArray} data
+ * @param {number} width @param {number} height
+ * @param {import('../style.js').StyleSpec} style
+ * @param {number} size @param {number} qz @param {number} modulePx
+ */
+function paintLogoPlate(data, width, height, style, size, qz, modulePx) {
+  const boxW = style.logo.sizeRatio * size;
+  const plate = boxW + style.logo.padding * 2;
+  const c = (qz + size / 2) * modulePx;
+  const half = (plate / 2) * modulePx;
+  const plateRgb = rgbOf(style.logo.plate, [255, 255, 255]);
+  const y0 = Math.max(0, Math.floor(c - half));
+  const y1 = Math.min(height, Math.ceil(c + half));
+  const x0 = Math.max(0, Math.floor(c - half));
+  const x1 = Math.min(width, Math.ceil(c + half));
+  for (let py = y0; py < y1; py++) {
+    for (let px = x0; px < x1; px++) {
+      if (style.logo.shape === 'circle' && Math.hypot(px + 0.5 - c, py + 0.5 - c) > half) continue;
+      const o = (py * width + px) * 4;
+      data[o] = plateRgb[0];
+      data[o + 1] = plateRgb[1];
+      data[o + 2] = plateRgb[2];
+      data[o + 3] = 255;
+    }
+  }
 }
 
 /**

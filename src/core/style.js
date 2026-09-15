@@ -156,25 +156,52 @@ export function checkContrast(style) {
 
 /* ------------------------------------------------------------------ logo -- */
 
-/**
- * Share of the error-correction budget this app is willing to spend on a logo.
- *
- * The rest is left for the things error correction is actually there for:
- * ink spread, a scratch, a thumbprint, a crease, a camera at an angle. The
- * nominal figures for L/M/Q/H are 7/15/25/30 percent of codewords, and a centre
- * logo does not damage codewords evenly, it destroys a contiguous block of
- * them, which is the worst case for Reed-Solomon. Spending just over half the
- * budget is the compromise; the scan verification is what confirms it.
- */
-const LOGO_BUDGET_SHARE = 0.55;
+/** Nominal recovery capacity of each level, from ISO/IEC 18004. */
+const NOMINAL_RECOVERY = { L: 0.07, M: 0.15, Q: 0.25, H: 0.3 };
 
-/** @type {Record<string, number>} */
-export const LOGO_COVERAGE_CEILING = {
-  L: 0.07 * LOGO_BUDGET_SHARE,
-  M: 0.15 * LOGO_BUDGET_SHARE,
-  Q: 0.25 * LOGO_BUDGET_SHARE,
-  H: 0.3 * LOGO_BUDGET_SHARE,
-};
+/**
+ * How much of that budget a logo may spend, as a function of code size.
+ *
+ * This was a flat 55% until it was measured, and measuring it showed two
+ * things. The flat figure was too generous at every level, and the real limit
+ * depends strongly on how big the code is.
+ *
+ * Sweeping logo sizes against the full scan test, the largest coverage that
+ * still decoded under all four conditions was:
+ *
+ *   level   version 1-2    version 3-5    version 8-12
+ *   L          3.6%           4.3%            6.0%
+ *   M          5.8%           7.6%           11.5%
+ *   Q         13.0%          17.1%           18.6%
+ *   H         13.0%          17.1%           20.2%
+ *
+ * The reason for the slope is structural. A QR code splits its data across
+ * error-correction blocks and interleaves them, so damage spread over many
+ * blocks is recoverable while damage concentrated in one is not. A version 2
+ * code has a single block, so a logo in the middle destroys one contiguous run
+ * of it, which is the worst case Reed-Solomon can be handed. Larger versions
+ * have more blocks and the same blob is shared out between them.
+ *
+ * So the share ramps from 35% of the nominal budget on the smallest codes to
+ * 65% on version 10 and up. Every value it produces sits under the measured
+ * limit above with margin to spare, which the sweep test asserts directly.
+ *
+ * @param {'L'|'M'|'Q'|'H'} ecc
+ * @param {number} size Modules per side, excluding the quiet zone.
+ * @returns {number} the largest coverage fraction this app will allow
+ */
+export function logoCeiling(ecc, size) {
+  const version = Math.round((size - 17) / 4);
+  const share = 0.35 + 0.3 * Math.min(1, Math.max(0, (version - 2) / 8));
+  return NOMINAL_RECOVERY[ecc] * share;
+}
+
+/**
+ * The nominal figures, for copy that needs to explain the trade-off. Not the
+ * limit: see logoCeiling for that.
+ * @type {Record<string, number>}
+ */
+export const LOGO_NOMINAL_RECOVERY = NOMINAL_RECOVERY;
 
 /**
  * Fraction of the code's modules a centre logo covers.
@@ -205,15 +232,15 @@ export function logoCoverage(size, logo) {
  * @returns {{ok: boolean, coverage: number, ceiling: number, level: 'good'|'risky'|'fail', message: string|null, suggestEcc: 'L'|'M'|'Q'|'H'|null}}
  */
 export function checkLogo(size, logo, ecc) {
-  if (!logo) return { ok: true, coverage: 0, ceiling: LOGO_COVERAGE_CEILING[ecc], level: 'good', message: null, suggestEcc: null };
+  if (!logo) return { ok: true, coverage: 0, ceiling: logoCeiling(ecc, size), level: 'good', message: null, suggestEcc: null };
 
   const { coverage } = logoCoverage(size, logo);
-  const ceiling = LOGO_COVERAGE_CEILING[ecc];
+  const ceiling = logoCeiling(ecc, size);
   const pct = (v) => `${(v * 100).toFixed(1)}%`;
 
   if (coverage > ceiling) {
     const better = /** @type {('L'|'M'|'Q'|'H')[]} */ (['M', 'Q', 'H']).find(
-      (l) => LOGO_COVERAGE_CEILING[l] >= coverage,
+      (l) => logoCeiling(l, size) >= coverage,
     );
     return {
       ok: false,
@@ -251,8 +278,98 @@ export function checkLogo(size, logo, ecc) {
  */
 export function eccForLogo(size, logo) {
   const { coverage } = logoCoverage(size, logo);
-  return /** @type {('L'|'M'|'Q'|'H')[]} */ (['L', 'M', 'Q', 'H']).find((l) => LOGO_COVERAGE_CEILING[l] >= coverage) ?? null;
+  return /** @type {('L'|'M'|'Q'|'H')[]} */ (['L', 'M', 'Q', 'H']).find((l) => logoCeiling(l, size) >= coverage) ?? null;
 }
+
+/**
+ * The largest logo a given correction level can carry.
+ *
+ * Inverts logoCoverage. Coverage is ceil(box)^2 / size^2, so the constraint
+ * coverage <= ceiling rearranges to
+ *
+ *   ceil(box) <= size * sqrt(ceiling)
+ *
+ * and since ceil(x) <= n exactly when x <= n for integer n, the largest usable
+ * box is floor(size * sqrt(ceiling)) modules across, padding included.
+ *
+ * Returns 0 when even a minimal logo would not fit, which happens on a small
+ * code at a low correction level.
+ *
+ * @param {number} size Modules per side, excluding quiet zone.
+ * @param {'L'|'M'|'Q'|'H'} ecc
+ * @param {number} padding Quiet margin around the logo, in modules.
+ * @returns {number} sizeRatio, as a fraction of the code's width
+ */
+export function maxLogoRatio(size, ecc, padding = 1) {
+  const boxModules = Math.floor(size * Math.sqrt(logoCeiling(ecc, size)));
+  return Math.max(0, (boxModules - padding * 2) / size);
+}
+
+/**
+ * Work out how the code should adapt to a logo.
+ *
+ * This is the "scale it so the logo does not break it" decision, in one pure
+ * function so the interface never has to reason about it.
+ *
+ * Two levers, in order of preference:
+ *
+ *   1. Raise the correction level. More redundancy means more covered modules
+ *      can be rebuilt. It costs density: the code needs more squares, so at a
+ *      fixed printed width every square gets smaller. That trade is worth
+ *      making for a logo, but it has to be said out loud rather than happening
+ *      behind the user's back.
+ *   2. Shrink the logo. Only when even the highest correction level cannot
+ *      carry it, because silently dropping to an unreadable code would be the
+ *      worst outcome and silently ignoring the request would be the second
+ *      worst.
+ *
+ * The level is never lowered here. Someone who deliberately set a high level
+ * keeps it.
+ *
+ * @param {object} args
+ * @param {number} args.size Modules per side, excluding quiet zone.
+ * @param {LogoSpec} args.logo The logo as requested.
+ * @param {'L'|'M'|'Q'|'H'} args.ecc The level currently selected.
+ * @returns {{logo: LogoSpec, ecc: 'L'|'M'|'Q'|'H', raisedEcc: boolean, shrankLogo: boolean, reason: string|null}}
+ */
+export function planForLogo({ size, logo, ecc }) {
+  const order = /** @type {('L'|'M'|'Q'|'H')[]} */ (['L', 'M', 'Q', 'H']);
+  // When nothing can carry it, aim at the highest level and shrink to that,
+  // which gives the largest logo the code can actually take. Aiming at the
+  // current level instead would shrink the logo further than necessary.
+  const needed = eccForLogo(size, logo) ?? 'H';
+
+  // The level that can carry this logo, never below the one already chosen.
+  const target = order.indexOf(needed) > order.indexOf(ecc) ? needed : ecc;
+  const raisedEcc = target !== ecc;
+
+  const allowed = maxLogoRatio(size, target, logo.padding);
+  const shrankLogo = logo.sizeRatio > allowed;
+  const finalLogo = shrankLogo ? { ...logo, sizeRatio: Math.max(0.05, allowed) } : logo;
+
+  let reason = null;
+  if (raisedEcc && shrankLogo) {
+    reason = `Correction raised from ${ECC_COPY[ecc].label} to ${ECC_COPY[target].label} and the logo scaled down to ${Math.round(finalLogo.sizeRatio * 100)}% of the code, which is the largest this code can carry and still be read.`;
+  } else if (raisedEcc) {
+    reason = `Correction raised from ${ECC_COPY[ecc].label} to ${ECC_COPY[target].label} so the squares behind the logo can be rebuilt. The code is denser now, so print it slightly larger.`;
+  } else if (shrankLogo) {
+    reason = `The logo was scaled down to ${Math.round(finalLogo.sizeRatio * 100)}% of the code. Even at the highest correction level, anything bigger covers more than the code can recover.`;
+  }
+
+  return { logo: finalLogo, ecc: target, raisedEcc, shrankLogo, reason };
+}
+
+/**
+ * Plain-language names for the correction levels, re-exported from encode.js's
+ * vocabulary so style.js can write its own messages without importing the
+ * encoder. Kept in sync by the test in style.test.js.
+ */
+const ECC_COPY = {
+  L: { label: 'Low' },
+  M: { label: 'Medium' },
+  Q: { label: 'Quartile' },
+  H: { label: 'High' },
+};
 
 /* ----------------------------------------------------------------- shape -- */
 

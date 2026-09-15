@@ -4,7 +4,7 @@ import Notice from './Notice.jsx';
 import { parseCsv, splitHeader, safeFilename } from '../batch/csv.js';
 import { encode } from '../core/encode.js';
 import { matrixToSvg } from '../core/render/matrixToSvg.js';
-import { verify } from '../core/verify.js';
+import { verifyAsync } from '../core/verifyClient.js';
 import { saveBlob } from '../core/render/download.js';
 import { svgToPngBlob } from '../core/render/download.js';
 
@@ -100,7 +100,12 @@ export default function BatchMode({ encoding, style }) {
               idPrefix: `etch-${j}`,
             });
 
-            const check = await verify(result.matrix, result.version, text, { style });
+            const { result: check } = await verifyAsync({
+              matrix: result.matrix,
+              version: result.version,
+              expected: text,
+              style,
+            });
             if (!check.pass) {
               failures.push({
                 row: rowNumber,

@@ -20,6 +20,11 @@ export default defineConfig({
     host: true,
     allowedHosts: ['.ngrok-free.app', '.ngrok.io', '.trycloudflare.com', 'localhost'],
   },
+  // The verification worker loads its decoder with a dynamic import, which
+  // rules out Vite's default IIFE worker format because that cannot code-split.
+  // Module workers are supported everywhere current; verifyClient.js falls back
+  // to running on the main thread where they are not.
+  worker: { format: 'es' },
   build: {
     target: 'es2020',
     cssCodeSplit: false,
