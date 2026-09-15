@@ -32,6 +32,8 @@ const NAMES = [
   'box-arrow-up-right', 'clipboard', 'clipboard-check', 'upload', 'arrow-repeat',
   'search', 'x-lg', 'eye', 'link', 'grid-3x3-gap', 'lightning-charge', 'wifi-off',
   'arrow-left', 'plus-lg', 'dash-lg', 'question-circle', 'table', 'trash',
+  // Explainer sections
+  'scissors', 'aspect-ratio', 'droplet', 'journal-text', 'code-slash',
 ];
 
 const paths = {};

@@ -27,7 +27,18 @@ let decoderPromise = null;
 
 /** @returns {Promise<(d: Uint8ClampedArray, w: number, h: number, o?: object) => {data: string}|null>} */
 function loadDecoder() {
-  if (!decoderPromise) decoderPromise = import('jsqr').then((m) => m.default);
+  if (!decoderPromise) {
+    decoderPromise = import('jsqr').then(
+      (m) => m.default,
+      (err) => {
+        // Forget the failed attempt, or one flaky moment would leave a
+        // permanently rejected promise and every later verification would
+        // fail against a network that has long since recovered.
+        decoderPromise = null;
+        throw err;
+      },
+    );
+  }
   return decoderPromise;
 }
 

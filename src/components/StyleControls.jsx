@@ -63,10 +63,20 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
   return (
     <details className="disclosure">
       <summary>
-        <Icon name="palette" size={16} />
-        Appearance
+        <span className="card-icon hue-fuchsia">
+          <Icon name="palette" size={16} />
+        </span>
+        {/* Naming the logo here rather than hiding it behind the word
+            "Appearance": adding a logo is the single most asked-for thing in
+            this panel, and nobody opens a collapsed section to look for a
+            feature they do not know is there. */}
+        Colours, shapes and logo
         <span className="summary-note" style={{ marginLeft: 'auto' }}>
-          {style.moduleShape === 'square' && !style.logo && style.foreground === '#000000' ? 'Standard' : 'Customised'}
+          {style.logo
+            ? 'Logo added'
+            : style.moduleShape === 'square' && style.foreground === '#000000'
+              ? 'Standard'
+              : 'Customised'}
         </span>
         <Icon name="chevron-right" size={14} className="chev" />
       </summary>
@@ -81,7 +91,7 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
         {/* ---------------------------------------------------- colours -- */}
         <div className="field">
           <span className="label">Colours</span>
-          <div className="chip-row">
+          <div className="chip-row-centered">
             {PRESETS.map((p) => (
               <button
                 key={p.id}
@@ -248,11 +258,16 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
                 onChange={(e) => onLogoFile(e.target.files?.[0])}
                 id="logo-file"
               />
-              <button type="button" className="btn" onClick={() => fileRef.current?.click()}>
-                <Icon name="upload" size={16} />
-                Choose an image
-              </button>
-              <p className="hint">Read in your browser. Like everything else here, it is never uploaded anywhere.</p>
+              <div className="actions">
+                <button type="button" className="btn btn-primary" onClick={() => fileRef.current?.click()}>
+                  <Icon name="upload" size={16} />
+                  Upload a logo
+                </button>
+              </div>
+              <p className="hint centered">
+                PNG, JPEG, SVG or WebP, up to 512KB. Read in your browser: like everything else here, it is never
+                uploaded anywhere. The code will be re-checked with the logo in place before you can download it.
+              </p>
             </>
           ) : (
             <div className="stack-sm">
@@ -272,6 +287,16 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
                   Remove
                 </button>
               </div>
+
+              {/* pdf-lib can embed PNG and JPEG and nothing else. Saying so is
+                  better than letting someone discover it from a PDF with a
+                  blank square where their logo should be. */}
+              {style.logo.href.startsWith('data:image/svg') && (
+                <Notice kind="warn" word="Not in the PDF">
+                  The print-ready PDF can only carry PNG and JPEG images, so an SVG logo appears in the SVG and PNG
+                  exports but leaves a blank plate in the PDF. Upload the same logo as a PNG if you need the PDF.
+                </Notice>
+              )}
 
               <div className="field">
                 <label className="label" htmlFor="logosize">
@@ -361,10 +386,12 @@ export default function StyleControls({ etch, style, setStyle, onReset, onRaiseE
           </p>
         </div>
 
-        <button type="button" className="btn" onClick={onReset}>
-          <Icon name="arrow-repeat" size={16} />
-          Back to plain black on white
-        </button>
+        <div className="actions">
+          <button type="button" className="btn" onClick={onReset}>
+            <Icon name="arrow-repeat" size={16} />
+            Back to plain black on white
+          </button>
+        </div>
       </div>
     </details>
   );

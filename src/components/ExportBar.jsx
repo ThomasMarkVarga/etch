@@ -74,7 +74,7 @@ export default function ExportBar({ svg, result, typeLabel, verification, style,
         </Notice>
       )}
 
-      <div className="row" style={{ gap: 'var(--s-2)' }}>
+      <div className="actions">
         <button type="button" className="btn btn-primary" onClick={onSvg} disabled={busy === 'svg'}>
           {busy === 'svg' ? <span className="spinner" /> : <Icon name="filetype-svg" size={16} />}
           Download SVG
@@ -85,10 +85,8 @@ export default function ExportBar({ svg, result, typeLabel, verification, style,
         </button>
       </div>
 
-      <div className="row" style={{ gap: 'var(--s-2)' }}>
-        <span className="hint" style={{ minWidth: '4.5rem' }}>
-          PNG
-        </span>
+      <div className="actions">
+        <span className="actions-label">PNG for screens and documents</span>
         {sizes.map((s) => (
           <button
             key={s.pixels}
@@ -103,7 +101,7 @@ export default function ExportBar({ svg, result, typeLabel, verification, style,
         ))}
       </div>
 
-      <p className="hint">
+      <p className="hint centered">
         SVG is the one to send a printer: it is vector, so it stays sharp at any size. These PNG sizes are chosen so
         each square is a whole number of pixels ({sizes.map((s) => s.modulePx).join(', ')} px respectively), because a
         square that lands on half a pixel comes out blurred. The PDF is vector at exactly {widthMm}mm.

@@ -34,6 +34,7 @@ import { buildAppStore, validateAppStore, APPSTORE_EXAMPLE, APPSTORE_SUPPORT, AP
  * @property {(input: any) => {field: string, level: 'error'|'warning', message: string}[]} validate
  * @property {object} example
  * @property {string} support How real scanners handle it.
+ * @property {string} hue Decorative colour class, from the six in tokens.css.
  * @property {boolean} sensitive Keep out of shareable URLs.
  * @property {string} [note] A longer honest caveat.
  * @property {string} [recommendedEcc]
@@ -43,6 +44,7 @@ import { buildAppStore, validateAppStore, APPSTORE_EXAMPLE, APPSTORE_SUPPORT, AP
 export const PAYLOAD_TYPES = [
   {
     id: 'url',
+    hue: 'indigo',
     label: 'Website',
     icon: 'link-45deg',
     blurb: 'Opens a web address.',
@@ -54,6 +56,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'text',
+    hue: 'sky',
     label: 'Text',
     icon: 'card-text',
     blurb: 'Shows words. Opens nothing.',
@@ -65,6 +68,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'wifi',
+    hue: 'cyan',
     label: 'Wi-Fi',
     icon: 'wifi',
     blurb: 'Joins a network without typing the password.',
@@ -76,6 +80,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'contact',
+    hue: 'violet',
     label: 'Contact',
     icon: 'person-vcard',
     blurb: 'Saves a name and number to the phone.',
@@ -87,6 +92,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'email',
+    hue: 'fuchsia',
     label: 'Email',
     icon: 'envelope',
     blurb: 'Opens a new message, ready to send.',
@@ -98,6 +104,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'sms',
+    hue: 'teal',
     label: 'Text message',
     icon: 'chat-dots',
     blurb: 'Opens a text message, ready to send.',
@@ -109,6 +116,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'tel',
+    hue: 'indigo',
     label: 'Phone',
     icon: 'telephone',
     blurb: 'Offers to call a number.',
@@ -120,6 +128,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'geo',
+    hue: 'sky',
     label: 'Location',
     icon: 'geo-alt',
     blurb: 'A point on the map, by coordinates.',
@@ -131,6 +140,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'event',
+    hue: 'violet',
     label: 'Event',
     icon: 'calendar-event',
     blurb: 'Adds a date to the calendar.',
@@ -142,6 +152,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'sepa',
+    hue: 'teal',
     label: 'Bank transfer',
     icon: 'bank',
     blurb: 'Fills in a euro transfer in a banking app.',
@@ -154,6 +165,7 @@ export const PAYLOAD_TYPES = [
   },
   {
     id: 'appstore',
+    hue: 'fuchsia',
     label: 'App link',
     icon: 'phone',
     blurb: 'Opens an app listing. Read the note first.',

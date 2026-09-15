@@ -84,40 +84,66 @@ export function useEtch({ typeId, input, encoding, style: rawStyle }) {
 
   const [verification, setVerification] = useState(null);
   const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState(null);
   const [culprit, setCulprit] = useState(null);
   const runId = useRef(0);
+  const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
     if (!result) {
       setVerification(null);
       setCulprit(null);
       setVerifying(false);
+      setVerifyError(null);
       return undefined;
     }
 
     const id = ++runId.current;
     setVerifying(true);
+    setVerifyError(null);
 
     const timer = setTimeout(() => {
-      // Yield to the browser first, so a long verification never blocks the
-      // keystroke that triggered it from painting.
+      /*
+        Deliberately not requestAnimationFrame.
+
+        rAF was here to yield before a long synchronous verification, but rAF
+        callbacks do not fire at all while a tab is hidden or occluded, so
+        switching away mid-type left the panel showing "Checking" for ever and
+        the check never ran. The debounce above already provides the yield, and
+        this way the result does not depend on the page being painted.
+      */
       const run = async () => {
         if (runId.current !== id) return;
-        const v = await verify(result.matrix, result.version, result.text, { style });
-        // A newer run started while this one was decoding, so its answer is the
-        // one that belongs on screen.
-        if (runId.current !== id) return;
-        setVerification(v);
-        setCulprit(v.pass ? null : await findStyleCulprit(result.matrix, result.version, result.text, style));
-        if (runId.current !== id) return;
-        setVerifying(false);
+        try {
+          const v = await verify(result.matrix, result.version, result.text, { style });
+          // A newer run started while this one was decoding, so its answer is
+          // the one that belongs on screen.
+          if (runId.current !== id) return;
+          setVerification(v);
+          setCulprit(v.pass ? null : await findStyleCulprit(result.matrix, result.version, result.text, style));
+          if (runId.current !== id) return;
+          setVerifying(false);
+        } catch (err) {
+          // The decoder is fetched on demand, so a dropped connection or a
+          // deploy mid-session can stop it arriving. Without this the panel
+          // would sit on "Checking" for ever, which is the one outcome worse
+          // than saying the check could not run.
+          if (runId.current !== id) return;
+          setVerification(null);
+          setCulprit(null);
+          setVerifyError(
+            err instanceof Error && /import|fetch|network/i.test(err.message)
+              ? 'The scan checker could not be loaded, which usually means the connection dropped.'
+              : 'The scan check could not be completed.',
+          );
+          setVerifying(false);
+        }
       };
-      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => void run());
-      else void run();
+      void run();
     }, VERIFY_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [result, style]);
+  }, [result, style, retryToken]);
 
   return {
     type,
@@ -137,6 +163,8 @@ export function useEtch({ typeId, input, encoding, style: rawStyle }) {
     svg,
     verification,
     verifying,
+    verifyError,
+    retryVerification: () => setRetryToken((n) => n + 1),
     culprit,
   };
 }

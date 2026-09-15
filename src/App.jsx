@@ -11,6 +11,7 @@ import PrintPanel from './components/PrintPanel.jsx';
 import TrustPanel from './components/TrustPanel.jsx';
 import ShareBar from './components/ShareBar.jsx';
 import Showcase from './components/Showcase.jsx';
+import Explainers from './components/Explainers.jsx';
 import SiteFooter from './components/SiteFooter.jsx';
 import { useEtch } from './hooks/useEtch.js';
 import { useTheme } from './hooks/useTheme.js';
@@ -130,18 +131,9 @@ export default function App() {
             <span style={{ fontWeight: 700, fontSize: 'var(--fs-18)', letterSpacing: '-0.02em' }}>Etch</span>
           </a>
 
-          <div className="row" style={{ gap: 'var(--s-2)' }}>
-            <a
-              className="btn btn-quiet btn-sm"
-              href="https://github.com/ThomasMarkVarga/etch"
-              target="_blank"
-              rel="noopener"
-            >
-              <Icon name="github" size={16} />
-              <span className="visually-hidden sm:not-sr-only">Source</span>
-            </a>
-            <ThemeButton theme={theme} setTheme={setTheme} />
-          </div>
+          {/* The source link lives in the footer now, where the rest of the
+              credits are. The header keeps one control. */}
+          <ThemeButton theme={theme} setTheme={setTheme} />
         </div>
       </header>
 
@@ -149,7 +141,7 @@ export default function App() {
         <Hero />
 
         <nav aria-label="What you want to do" style={{ margin: 'var(--s-6) 0 var(--s-5)' }}>
-          <div className="segmented" style={{ maxWidth: '34rem' }} role="tablist">
+          <div className="segmented" style={{ maxWidth: '34rem', marginInline: 'auto' }} role="tablist">
             {MODES.map((m) => (
               <button
                 key={m.id}
@@ -159,7 +151,7 @@ export default function App() {
                 onClick={() => setMode(m.id)}
                 style={{ minHeight: 40 }}
               >
-                <Icon name={m.icon} size={14} style={{ marginRight: 6 }} />
+                <Icon name={m.icon} size={15} />
                 {m.label}
               </button>
             ))}
@@ -203,6 +195,7 @@ export default function App() {
             )}
 
             <TrustPanel />
+            <Explainers />
           </div>
 
           <Showcase />
@@ -240,7 +233,10 @@ function CreateMode({
     <div className="create-grid">
       <div className="stack" style={{ minWidth: 0 }}>
         <section className="card card-pad" aria-labelledby="h-payload">
-          <h2 id="h-payload" className="card-title" style={{ marginBottom: 'var(--s-4)' }}>
+          <h2 id="h-payload" className="card-title" style={{ marginBottom: 'var(--s-4)', display: 'inline-flex', alignItems: 'center', gap: 'var(--s-3)' }}>
+            <span className={`card-icon hue-${etch.type.hue}`}>
+              <Icon name={etch.type.icon} size={17} />
+            </span>
             What goes in the code
           </h2>
           <PayloadForm
@@ -267,6 +263,9 @@ function CreateMode({
         <section className="card" aria-labelledby="h-preview">
           <div className="card-head">
             <h2 id="h-preview" className="card-title">
+              <span className="card-icon hue-indigo">
+                <Icon name="grid-3x3-gap" size={17} />
+              </span>
               Your code
             </h2>
             {etch.result && (
@@ -301,6 +300,8 @@ function CreateMode({
             <VerifyPanel
               verification={etch.verification}
               verifying={etch.verifying}
+              verifyError={etch.verifyError}
+              onRetry={etch.retryVerification}
               culprit={etch.culprit}
               onRevert={revertCulprit}
             />
@@ -334,7 +335,10 @@ function CreateMode({
         )}
 
         <section className="card card-pad" aria-labelledby="h-support">
-          <h2 id="h-support" className="card-title" style={{ marginBottom: 'var(--s-2)' }}>
+          <h2 id="h-support" className="card-title" style={{ marginBottom: 'var(--s-3)', display: 'inline-flex', alignItems: 'center', gap: 'var(--s-3)' }}>
+            <span className="card-icon hue-sky">
+              <Icon name="phone" size={17} />
+            </span>
             How phones handle this type
           </h2>
           <p className="hint">{etch.type.support}</p>
@@ -344,30 +348,41 @@ function CreateMode({
   );
 }
 
+/** Each promise gets its own colour, so the row reads as four things. */
+const HERO_CHIPS = [
+  { icon: 'patch-check', label: 'No signup', hue: 'indigo' },
+  { icon: 'wifi-off', label: 'Works offline', hue: 'cyan' },
+  { icon: 'shield-check', label: 'Nothing leaves your browser', hue: 'teal' },
+  { icon: 'lightning-charge', label: 'Every export free', hue: 'fuchsia' },
+];
+
 function Hero() {
   return (
-    <div style={{ maxWidth: '44rem' }}>
+    <div className="centered" style={{ maxWidth: '46rem', marginInline: 'auto' }}>
       <h1 style={{ fontSize: 'clamp(1.9rem, 5vw, var(--fs-42))', fontWeight: 700, letterSpacing: '-0.033em' }}>
-        A QR code you print once and never have to reprint.
+        A QR code you print once and{' '}
+        <span className="hero-accent">never have to reprint</span>.
       </h1>
-      <p style={{ marginTop: 'var(--s-4)', fontSize: 'var(--fs-18)', color: 'var(--text-2)', maxWidth: '38rem' }}>
+      <p
+        style={{
+          marginTop: 'var(--s-4)',
+          marginInline: 'auto',
+          fontSize: 'var(--fs-18)',
+          color: 'var(--text-2)',
+          maxWidth: '40rem',
+        }}
+      >
         Most free generators encode <em>their</em> short link and redirect it to yours. That redirect is a
         subscription: stop paying, or let the company fold, and every code you printed goes dead. Etch puts your data
         straight into the pattern, in your browser. Nothing to expire, nothing to pay, nothing anyone can switch off.
       </p>
-      <div className="chip-row" style={{ marginTop: 'var(--s-4)' }}>
-        <span className="chip">
-          <Icon name="patch-check" size={13} /> No signup
-        </span>
-        <span className="chip">
-          <Icon name="wifi-off" size={13} /> Works offline
-        </span>
-        <span className="chip">
-          <Icon name="shield-check" size={13} /> Nothing leaves your browser
-        </span>
-        <span className="chip">
-          <Icon name="lightning-charge" size={13} /> Every export free
-        </span>
+      <div className="chip-row-centered" style={{ marginTop: 'var(--s-5)' }}>
+        {HERO_CHIPS.map((c) => (
+          <span key={c.label} className={`chip chip-hued hue-${c.hue}`}>
+            <Icon name={c.icon} size={14} />
+            {c.label}
+          </span>
+        ))}
       </div>
     </div>
   );

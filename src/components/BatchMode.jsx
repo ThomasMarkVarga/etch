@@ -200,7 +200,7 @@ export default function BatchMode({ encoding, style }) {
               onFile(e.dataTransfer.files?.[0]);
             }}
           />
-          <div className="row" style={{ gap: 'var(--s-2)' }}>
+          <div className="actions">
             <input
               ref={fileRef}
               id="csvfile"
@@ -308,10 +308,12 @@ export default function BatchMode({ encoding, style }) {
                 </div>
               </div>
             ) : (
-              <button type="button" className="btn btn-primary" onClick={run} disabled={parsed.body.length === 0}>
-                <Icon name="file-earmark-zip" size={16} />
-                Build {parsed.body.length} codes and download the ZIP
-              </button>
+              <div className="actions">
+                <button type="button" className="btn btn-primary" onClick={run} disabled={parsed.body.length === 0}>
+                  <Icon name="file-earmark-zip" size={16} />
+                  Build {parsed.body.length} codes and download the ZIP
+                </button>
+              </div>
             )}
           </>
         )}

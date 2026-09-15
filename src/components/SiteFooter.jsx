@@ -1,14 +1,18 @@
+import Icon from './Icon.jsx';
+
 /**
  * Footer.
  *
- * Deliberately the same shape as the other vibe-coding.fans apps: the pink
- * pill linking home, then small print in prose rather than a list. PasteSafe,
- * Overlap and BridgeDays all do exactly this, and a visitor arriving from the
- * wall should land somewhere that feels like the same place.
+ * Same shape as the other vibe-coding.fans apps: the pink pill linking home,
+ * then small print. Laid out as a centred column rather than one dense
+ * paragraph, because the previous version buried six underlined links inside a
+ * block of prose and read as a wall of noise.
  *
- * The credits are not a formality. Writing a QR encoder from scratch would
- * have been a worse decision than using the reference implementation, and
- * saying whose work this is built on is part of being honest about that.
+ * Three tiers, in order of how likely anyone is to want them: the link home,
+ * the handful of links people actually click, then the credits and the
+ * promise. The credits are not a formality: writing a QR encoder from scratch
+ * would have been a worse decision than using the reference implementation,
+ * and saying whose work this is built on is part of being honest about that.
  */
 
 /** The vibe-coding.fans mark, as the sibling apps embed it. */
@@ -31,10 +35,25 @@ function VcfMark() {
 
 const SOURCE = 'https://github.com/ThomasMarkVarga/etch';
 
+const LINKS = [
+  { icon: 'github', label: 'Source on GitHub', href: SOURCE },
+  { icon: 'shield-check', label: 'How it works', href: '#how-it-works' },
+  { icon: 'question-circle', label: 'Questions', href: '#learn' },
+  { icon: 'box-arrow-up-right', label: 'vibe-coding.fans', href: 'https://vibe-coding.fans/' },
+];
+
+const CREDITS = [
+  { name: 'qrcodegen', href: 'https://www.nayuki.io/page/qr-code-generator-library', who: 'Project Nayuki', licence: 'MIT' },
+  { name: 'jsQR', href: 'https://github.com/cozmo/jsQR', who: 'Cosmo Wolfe', licence: 'Apache 2.0' },
+  { name: 'pdf-lib', href: 'https://pdf-lib.js.org/', who: 'Andrew Dillon', licence: 'MIT' },
+  { name: 'JSZip', href: 'https://stuk.github.io/jszip/', who: 'Stuart Knightley', licence: 'MIT' },
+  { name: 'Bootstrap Icons', href: 'https://icons.getbootstrap.com/', who: 'the Bootstrap authors', licence: 'MIT' },
+];
+
 export default function SiteFooter() {
   return (
     <footer className="foot">
-      <div className="shell">
+      <div className="shell foot-inner">
         <a className="vcf-home" href="https://vibe-coding.fans/">
           <VcfMark />
           <span>
@@ -42,40 +61,44 @@ export default function SiteFooter() {
           </span>
         </a>
 
-        <p className="hint">
-          <a href={SOURCE} target="_blank" rel="noopener">
-            Source on GitHub
-          </a>
-          , MIT License. QR encoding by{' '}
-          <a href="https://www.nayuki.io/page/qr-code-generator-library" target="_blank" rel="noopener">
-            qrcodegen
-          </a>{' '}
-          from Project Nayuki, MIT License. Decoding by{' '}
-          <a href="https://github.com/cozmo/jsQR" target="_blank" rel="noopener">
-            jsQR
-          </a>{' '}
-          by Cosmo Wolfe, Apache License 2.0. PDF export by{' '}
-          <a href="https://pdf-lib.js.org/" target="_blank" rel="noopener">
-            pdf-lib
-          </a>
-          , batch archives by{' '}
-          <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener">
-            JSZip
-          </a>
-          , icons from{' '}
-          <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener">
-            Bootstrap Icons
-          </a>
-          , all MIT License. Fonts: IBM Plex Sans and IBM Plex Mono, SIL Open Font License.
+        <nav className="foot-links" aria-label="About this app">
+          {LINKS.map((l) => (
+            <a
+              key={l.label}
+              href={l.href}
+              {...(l.href.startsWith('#') ? {} : { target: '_blank', rel: 'noopener' })}
+            >
+              <Icon name={l.icon} size={15} />
+              {l.label}
+            </a>
+          ))}
+        </nav>
+
+        <hr className="foot-rule" />
+
+        <p className="foot-credits">
+          Etch is free and open source under the MIT licence. Built on{' '}
+          {CREDITS.map((c, i) => (
+            <span key={c.name}>
+              <a href={c.href} target="_blank" rel="noopener">
+                {c.name}
+              </a>
+              {i === CREDITS.length - 1 ? '' : i === CREDITS.length - 2 ? ' and ' : ', '}
+            </span>
+          ))}
+          . Set in IBM Plex Sans and IBM Plex Mono, under the SIL Open Font License.
         </p>
 
-        <p className="hint">
+        <p className="foot-note">
           Everything runs in your browser. Nothing is uploaded, nothing is stored, and there are no accounts, no
-          cookies and no tracking. The codes this makes are static: they contain your data rather than a link back
-          here, so they keep working whatever happens to this site.
+          cookies and no tracking. The codes are static, so they hold your data rather than a link back here and keep
+          working whatever happens to this site.
         </p>
 
-        <p className="hint">Print a test code and scan it before you order a thousand of anything.</p>
+        <p className="foot-tip">
+          <Icon name="printer" size={15} />
+          Print one and scan it before you order a thousand of anything.
+        </p>
       </div>
     </footer>
   );

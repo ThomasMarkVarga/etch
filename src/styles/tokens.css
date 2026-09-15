@@ -124,6 +124,34 @@
   --paper-fixed: #ffffff;
   --ink-fixed: #0b0b0d;
 
+
+  /*
+    Decorative hues.
+
+    Each payload type and each card gets its own colour, which makes the
+    interface far less grey and, more usefully, makes the eleven type buttons
+    tellable apart at a glance rather than being eleven identical grey pills.
+
+    Green, amber and red are deliberately absent from this set. This app leans
+    on those three constantly to mean passed, check this, and failed, and a
+    decorative green button sitting next to a green pass badge would make the
+    pass badge mean less. Every value here clears 4.5:1 on white and on its own
+    tint (measured: indigo 7.90, violet 7.10, fuchsia 6.32, cyan 7.27,
+    sky 5.93, teal 5.47).
+  */
+  --hue-indigo: #4338ca;
+  --hue-indigo-soft: #eef2ff;
+  --hue-violet: #6d28d9;
+  --hue-violet-soft: #f5f3ff;
+  --hue-fuchsia: #a21caf;
+  --hue-fuchsia-soft: #fdf4ff;
+  --hue-sky: #0369a1;
+  --hue-sky-soft: #f0f9ff;
+  --hue-cyan: #155e75;
+  --hue-cyan-soft: #ecfeff;
+  --hue-teal: #0f766e;
+  --hue-teal-soft: #f0fdfa;
+
   --shadow-1: 0 1px 2px rgba(17, 20, 26, 0.06);
   --shadow-2: 0 4px 12px -2px rgba(17, 20, 26, 0.08), 0 1px 3px rgba(17, 20, 26, 0.06);
   --shadow-3: 0 24px 48px -16px rgba(17, 20, 26, 0.18), 0 2px 6px rgba(17, 20, 26, 0.05);
@@ -205,6 +233,20 @@
   --canvas: #2b313d;
   --canvas-line: #3b4250;
 
+
+  --hue-indigo: #818cf8;
+  --hue-indigo-soft: rgba(129, 140, 248, 0.15);
+  --hue-violet: #a78bfa;
+  --hue-violet-soft: rgba(167, 139, 250, 0.15);
+  --hue-fuchsia: #e879f9;
+  --hue-fuchsia-soft: rgba(232, 121, 249, 0.15);
+  --hue-sky: #38bdf8;
+  --hue-sky-soft: rgba(56, 189, 248, 0.15);
+  --hue-cyan: #22d3ee;
+  --hue-cyan-soft: rgba(34, 211, 238, 0.15);
+  --hue-teal: #2dd4bf;
+  --hue-teal-soft: rgba(45, 212, 191, 0.15);
+
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 6px 16px -4px rgba(0, 0, 0, 0.5);
   --shadow-3: 0 28px 56px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.02);
@@ -249,7 +291,21 @@
     --canvas: #2b313d;
     --canvas-line: #3b4250;
 
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  
+  --hue-indigo: #818cf8;
+  --hue-indigo-soft: rgba(129, 140, 248, 0.15);
+  --hue-violet: #a78bfa;
+  --hue-violet-soft: rgba(167, 139, 250, 0.15);
+  --hue-fuchsia: #e879f9;
+  --hue-fuchsia-soft: rgba(232, 121, 249, 0.15);
+  --hue-sky: #38bdf8;
+  --hue-sky-soft: rgba(56, 189, 248, 0.15);
+  --hue-cyan: #22d3ee;
+  --hue-cyan-soft: rgba(34, 211, 238, 0.15);
+  --hue-teal: #2dd4bf;
+  --hue-teal-soft: rgba(45, 212, 191, 0.15);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-2: 0 6px 16px -4px rgba(0, 0, 0, 0.5);
     --shadow-3: 0 28px 56px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.02);
   }

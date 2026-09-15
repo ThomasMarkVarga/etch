@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PAYLOAD_TYPES } from '../payloads/index.js';
+import { PAYLOAD_TYPES, payloadType } from '../payloads/index.js';
 import { WIFI_AUTH, WPA3_NOTE } from '../payloads/wifi.js';
 import { CONTACT_FORMAT_HELP } from '../payloads/vcard.js';
 import { SMS_FORMATS } from '../payloads/sms.js';
@@ -89,36 +89,27 @@ export default function PayloadForm({ typeId, input, onChange, onTypeChange, iss
         <span className="label" id="type-label">
           What should the code do?
         </span>
-        <div
-          className="chip-row"
-          role="tablist"
-          aria-labelledby="type-label"
-          style={{ gap: 'var(--s-2)' }}
-        >
-          {PAYLOAD_TYPES.map((t) => {
-            const selected = t.id === typeId;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => onTypeChange(t.id)}
-                className="chip"
-                style={{
-                  minHeight: 38,
-                  cursor: 'pointer',
-                  borderColor: selected ? 'var(--accent)' : 'var(--border)',
-                  background: selected ? 'var(--accent-soft)' : 'var(--surface)',
-                  color: selected ? 'var(--accent)' : 'var(--text-2)',
-                }}
-              >
-                <Icon name={t.icon} size={14} />
-                {t.label}
-              </button>
-            );
-          })}
+        {/*
+          A grid rather than a wrapping chip row, so eleven buttons line up in
+          even columns instead of leaving a ragged last row, and each one keeps
+          its icon beside its label rather than above it.
+        */}
+        <div className="type-grid" role="tablist" aria-labelledby="type-label">
+          {PAYLOAD_TYPES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={t.id === typeId}
+              onClick={() => onTypeChange(t.id)}
+              className={`type-btn hue-${t.hue}`}
+            >
+              <Icon name={t.icon} size={16} />
+              {t.label}
+            </button>
+          ))}
         </div>
+        <p className="hint centered">{payloadType(typeId).blurb}</p>
       </div>
 
       <Fields typeId={typeId} input={input} set={set} errorFor={errorFor} onChange={onChange} />

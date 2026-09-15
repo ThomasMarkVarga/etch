@@ -19,6 +19,18 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/*
+  Tailwind's preflight sets `svg { display: block }`, which is sensible for
+  standalone graphics and wrong for an icon that labels a word: a block-level
+  SVG cannot share a line with its own text, so every icon broke onto the line
+  above its label. Inline-block puts it back on the baseline.
+*/
+.icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: -0.125em;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -342,6 +354,10 @@ p {
 }
 
 .segmented button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   flex: 1 1 auto;
   /* Never squeeze a label until its icon drops onto a second line: let the
      whole control wrap to another row instead, which stays readable at 375px. */
@@ -366,9 +382,15 @@ p {
 
 .segmented button[aria-pressed='true'],
 .segmented button[aria-selected='true'] {
-  background: var(--surface);
-  color: var(--text);
+  background: var(--accent);
+  color: var(--on-accent);
   box-shadow: var(--shadow-1);
+}
+
+.segmented button[aria-pressed='true']:hover,
+.segmented button[aria-selected='true']:hover {
+  background: var(--accent-hover);
+  color: var(--on-accent);
 }
 
 /* -------------------------------------------------------------- notices -- */
@@ -826,4 +848,408 @@ a.vcf-home:hover {
 
 .vcf-home b {
   font-weight: 800;
+}
+
+/* ======================================================= colour and polish == */
+
+/*
+  Per-hue helpers. A component sets --hue and --hue-soft once and everything
+  inside it picks the colour up, so a payload type, a card header badge and a
+  chip can share one colour without any of them hard-coding a hex value.
+*/
+.hued {
+  --hue: var(--accent);
+  --hue-soft: var(--accent-soft);
+}
+
+.hue-indigo { --hue: var(--hue-indigo); --hue-soft: var(--hue-indigo-soft); }
+.hue-violet { --hue: var(--hue-violet); --hue-soft: var(--hue-violet-soft); }
+.hue-fuchsia { --hue: var(--hue-fuchsia); --hue-soft: var(--hue-fuchsia-soft); }
+.hue-sky { --hue: var(--hue-sky); --hue-soft: var(--hue-sky-soft); }
+.hue-cyan { --hue: var(--hue-cyan); --hue-soft: var(--hue-cyan-soft); }
+.hue-teal { --hue: var(--hue-teal); --hue-soft: var(--hue-teal-soft); }
+
+/* ------------------------------------------------------------- type picker -- */
+
+/*
+  Eleven payload types, each in its own colour. Colour is not the only thing
+  telling them apart, since every one keeps its icon and its label, but with
+  eleven identical grey pills the eye has nothing to aim at, and with colour it
+  goes straight to the one it used last time.
+*/
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--s-2);
+}
+
+.type-btn {
+  /* No --hue declaration here on purpose. `.hue-indigo` and friends have the
+     same specificity as `.type-btn`, so declaring a fallback in this block
+     would win by source order and flatten all eleven colours to one. The
+     fallback goes at the point of use instead. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: var(--target);
+  padding: 0 var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background var(--fast) var(--ease-out),
+    border-color var(--fast) var(--ease-out),
+    color var(--fast) var(--ease-out);
+}
+
+.type-btn .icon {
+  color: var(--hue, var(--accent));
+}
+
+.type-btn:hover {
+  border-color: var(--hue, var(--accent));
+  background: var(--hue-soft, var(--accent-soft));
+  color: var(--text);
+}
+
+.type-btn[aria-selected='true'] {
+  border-color: var(--hue, var(--accent));
+  background: var(--hue-soft, var(--accent-soft));
+  color: var(--hue, var(--accent));
+  box-shadow: inset 0 0 0 1px var(--hue, var(--accent));
+}
+
+/* ------------------------------------------------------------ card headers -- */
+
+/*
+  A tinted rounded square behind the section icon. Cheap, and it gives each
+  panel an identity you can find again after scrolling.
+*/
+.card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: var(--r-sm);
+  background: var(--hue-soft, var(--accent-soft));
+  color: var(--hue, var(--accent));
+}
+
+.card-head .card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* Summary rows in a disclosure get the same treatment. */
+.disclosure > summary .card-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+/* ---------------------------------------------------------------- actions -- */
+
+/*
+  Action rows are centred. These are the moments where the page is offering a
+  choice rather than presenting a form, and a centred group reads as one
+  decision instead of a ragged left edge.
+*/
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+}
+
+.actions-label {
+  width: 100%;
+  text-align: center;
+  font-size: var(--fs-13);
+  color: var(--muted);
+}
+
+.centered {
+  text-align: center;
+}
+
+.chip-row-centered {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-2);
+}
+
+/* ------------------------------------------------------------------- hero -- */
+
+.hero-accent {
+  color: var(--accent);
+}
+
+/* Each hero chip carries its own hue, set inline by the component. */
+.chip.chip-hued {
+  border-color: color-mix(in srgb, var(--hue, var(--accent)) 35%, transparent);
+  background: var(--hue-soft, var(--accent-soft));
+  color: var(--hue, var(--accent));
+}
+
+.chip.chip-hued .icon {
+  color: var(--hue, var(--accent));
+}
+
+/* --------------------------------------------------------------- stat card -- */
+
+.stat-value {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--hue, var(--accent));
+}
+
+/* ----------------------------------------------------------- footer layout -- */
+
+/*
+  The footer was one dense paragraph with six underlined links in it, which
+  read as a wall. Split into a centred column: the pill, then a short row of
+  real links, then the small print, with links underlined only on hover so the
+  credits line stops looking like a ransom note.
+*/
+.foot-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-4);
+  text-align: center;
+}
+
+.foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2) var(--s-4);
+}
+
+.foot-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--text-2);
+  text-decoration: none;
+}
+
+.foot-links a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.foot-credits {
+  max-width: 60ch;
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.foot-credits a {
+  color: var(--text-2);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.foot-credits a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.foot-note {
+  max-width: 58ch;
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.foot-rule {
+  width: 100%;
+  max-width: 22rem;
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: var(--border);
+}
+
+/* The one line of advice that matters most gets to look like it matters. */
+.foot-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--fs-13);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------- explainers -- */
+
+/*
+  Separate cards with a coloured eyebrow label, the way BridgeDays does it, so
+  someone scanning for one answer can find the right block without reading the
+  other three.
+*/
+.explainer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+  margin-top: var(--s-7);
+}
+
+@media (min-width: 56rem) {
+  .explainer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .explainer-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.explainer {
+  position: relative;
+  padding: var(--s-5);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+/* A coloured spine, so the card belongs to its eyebrow even when scrolled. */
+.explainer::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+  background: var(--hue, var(--accent));
+}
+
+/* Two classes, so this beats the `.explainer p` rule below on specificity
+   rather than relying on source order. The eyebrow is a paragraph, and that
+   rule would otherwise repaint it as body text. */
+.explainer .eyebrow {
+  display: inline-block;
+  margin-bottom: var(--s-3);
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--r-pill);
+  background: var(--hue-soft, var(--accent-soft));
+  color: var(--hue, var(--accent));
+  font-size: var(--fs-12);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.explainer-title {
+  margin-bottom: var(--s-3);
+  font-size: var(--fs-21);
+  font-weight: 700;
+}
+
+.explainer p {
+  max-width: 68ch;
+  font-size: var(--fs-15);
+  line-height: 1.65;
+  color: var(--text-2);
+}
+
+.explainer p + p {
+  margin-top: var(--s-3);
+}
+
+.explainer strong {
+  color: var(--text);
+  font-weight: 650;
+}
+
+.explainer-aside {
+  padding: var(--s-3) var(--s-4);
+  border-left: 3px solid var(--hue, var(--accent));
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--hue-soft, var(--accent-soft));
+}
+
+.explainer-steps {
+  /* Tailwind's preflight strips list markers, and a numbered list with no
+     numbers is just a stack of paragraphs. */
+  list-style: decimal;
+  margin: 0;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: var(--s-3);
+  font-size: var(--fs-15);
+  line-height: 1.65;
+  color: var(--text-2);
+}
+
+.explainer-steps li::marker {
+  color: var(--hue, var(--accent));
+  font-weight: 700;
+}
+
+.explainer-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-5);
+}
+
+@media (min-width: 48rem) {
+  .explainer-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--s-6);
+  }
+}
+
+.explainer-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.explainer-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-top: 0.1rem;
+  border-radius: var(--r-sm);
+  background: var(--hue-soft, var(--accent-soft));
+  color: var(--hue, var(--accent));
+}
+
+.explainer-subtitle {
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-16);
+  font-weight: 650;
+  color: var(--text);
+}
+
+.explainer-qa p {
+  font-size: var(--fs-14);
 }

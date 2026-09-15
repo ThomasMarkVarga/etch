@@ -56,7 +56,7 @@ export default function PrintPanel({ etch, print, setPrint }) {
       <div className="disclosure-body stack">
         <div className="field">
           <span className="label">Where is it going?</span>
-          <div className="chip-row">
+          <div className="chip-row-centered">
             {PRINT_PRESETS.map((p) => (
               <button
                 key={p.id}

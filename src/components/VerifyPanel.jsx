@@ -19,8 +19,31 @@ import Notice from './Notice.jsx';
  * @param {boolean} props.verifying
  * @param {{culprit: string, label: string, revert: object}|null} props.culprit
  * @param {() => void} props.onRevert
+ * @param {string|null} props.verifyError
+ * @param {() => void} props.onRetry
  */
-export default function VerifyPanel({ verification, verifying, culprit, onRevert }) {
+export default function VerifyPanel({ verification, verifying, culprit, onRevert, verifyError, onRetry }) {
+  if (verifyError && !verifying) {
+    return (
+      <div className="notice notice-warn" role="alert">
+        <Icon name="exclamation-triangle-fill" size={18} className="notice-icon" />
+        <div style={{ minWidth: 0 }}>
+          <p>
+            <span className="notice-label">Could not check this code. </span>
+            {verifyError} The code itself is fine and you can still download it, but it has not been read back and
+            confirmed, so treat it as unchecked until this passes.
+          </p>
+          <div className="actions" style={{ marginTop: 'var(--s-3)', justifyContent: 'flex-start' }}>
+            <button type="button" className="btn btn-sm" onClick={onRetry}>
+              <Icon name="arrow-repeat" size={14} />
+              Try the check again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (verifying && !verification) {
     return (
       <div className="notice" aria-live="polite">
