@@ -82,7 +82,7 @@ the part to worry about, not the pattern. That is in the app too.
 ```bash
 npm install
 npm run dev      # http://localhost:8765
-npm test         # 180 tests, no browser needed
+npm test         # 212 tests, no browser needed
 npm run build    # static dist/, deployable anywhere
 ```
 
@@ -132,6 +132,23 @@ guarantees in the test suite are the guarantees a user gets.
 `npm run build` produces a static `dist/` that deploys to Cloudflare Pages with
 no configuration. `public/_redirects` handles the SPA fallback and
 `public/_headers` sets the CSP and cache headers.
+
+Set `VITE_SITE_URL` for the production build:
+
+```bash
+VITE_SITE_URL=https://etch.vibe-coding.fans npm run build
+```
+
+It fills in `canonical`, `og:url` and `og:image`. Left empty, which is the
+default in `.env`, those become root-relative paths, so the link preview image
+resolves against whatever host is serving the page. That is what you want on
+localhost or a tunnel, where an absolute URL to the production domain would
+simply 404 and the preview would come back with no image at all.
+
+The social image itself is generated at build time by `scripts/make-og.mjs`,
+and the QR code in it is a real one produced by this app's encoder and verified
+before the file is written. A social card for a QR generator showing a fake QR
+code would be a small lie in exactly the place this app asks to be trusted.
 
 ## Credits
 

@@ -132,6 +132,55 @@ const INK = [17, 20, 26];
 const PAPER = [244, 245, 247];
 const ACCENT = [67, 56, 202];
 const WHITE = [255, 255, 255];
+const MUTED = [141, 148, 162];
+
+/** The six decorative hues from tokens.css, used as a motif strip. */
+const HUES = [
+  [67, 56, 202], [109, 40, 217], [162, 28, 175],
+  [3, 105, 161], [21, 94, 117], [15, 118, 110],
+];
+
+/*
+  A geometric wordmark, drawn from rectangles.
+
+  There is no font rasteriser in Node, and pulling one in to set four letters
+  would be a poor trade. E, T, C and H all happen to be straight-stroke shapes
+  a stencil could cut, so they are drawn directly. Squared-off letterforms also
+  suit an app whose whole subject is squares on a grid, which makes this a
+  deliberate look rather than a workaround for a missing dependency.
+
+  Each entry returns [x, y, width, height] rectangles in glyph-local space.
+*/
+const GLYPHS = {
+  E: (w, h, s) => [[0, 0, s, h], [0, 0, w, s], [0, (h - s) / 2, w * 0.82, s], [0, h - s, w, s]],
+  T: (w, h, s) => [[0, 0, w, s], [(w - s) / 2, 0, s, h]],
+  C: (w, h, s) => [[0, 0, w, s], [0, 0, s, h], [0, h - s, w, s]],
+  H: (w, h, s) => [[0, 0, s, h], [w - s, 0, s, h], [0, (h - s) / 2, w, s]],
+};
+
+/**
+ * @param {{data: Uint8ClampedArray, width: number, height: number}} dst
+ * @param {string} text
+ * @param {number} x @param {number} y @param {number} h glyph height
+ * @param {[number, number, number]} colour
+ * @returns {number} x coordinate just past the final glyph
+ */
+function drawWord(dst, text, x, y, h, colour) {
+  const s = Math.round(h * 0.22);
+  const w = Math.round(h * 0.7);
+  const gap = Math.round(h * 0.2);
+  let cursor = x;
+  for (const ch of text) {
+    const parts = GLYPHS[ch];
+    if (parts) {
+      for (const [dx, dy, rw, rh] of parts(w, h, s)) {
+        fillRect(dst, Math.round(cursor + dx), Math.round(y + dy), Math.round(rw), Math.round(rh), colour);
+      }
+    }
+    cursor += w + gap;
+  }
+  return cursor - gap;
+}
 
 // A real code for the real site, verified before it is written to disk.
 const result = encode(SITE, { ecc: 'Q' });
@@ -146,31 +195,34 @@ if (!check.pass) {
   const H = 630;
   const og = makeCanvas(W, H, PAPER);
 
-  // Accent bar down the left edge.
-  fillRect(og, 0, 0, 14, H, ACCENT);
+  // Accent spine down the left edge, the same device the explainer cards use.
+  fillRect(og, 0, 0, 16, H, ACCENT);
 
-  const modulePx = Math.floor(400 / (result.size + 8));
+  // A real code for the real site, already verified above.
+  const modulePx = Math.floor(392 / (result.size + 8));
   const qr = rasterize(result.matrix, result.version, { modulePx });
-  const qrX = W - qr.width - 90;
+  const qrX = W - qr.width - 96;
   const qrY = Math.round((H - qr.height) / 2);
 
-  // A white plate behind the code, so the quiet zone reads as paper.
-  fillRect(og, qrX - 26, qrY - 26, qr.width + 52, qr.height + 52, WHITE);
+  // White plate behind it, so the quiet zone reads as paper against the page.
+  fillRect(og, qrX - 30, qrY - 30, qr.width + 60, qr.height + 60, WHITE);
   blit(og, qr, qrX, qrY);
 
-  // Text is drawn as solid blocks rather than glyphs: there is no font
-  // rasteriser here, and a wrong-looking word is worse than an honest bar.
-  // The real headline lives in og:image:alt and in the page itself.
-  const lines = [
-    { y: 200, w: 560 },
-    { y: 262, w: 470 },
-    { y: 352, w: 380, light: true },
-    { y: 396, w: 420, light: true },
-  ];
-  for (const l of lines) {
-    fillRect(og, 90, l.y, l.w, l.light ? 16 : 34, l.light ? [150, 156, 168] : INK);
-  }
-  fillRect(og, 90, 96, 210, 44, ACCENT);
+  // Wordmark and palette are set as one block, optically centred against the
+  // code on the right.
+  const wordTop = 232;
+  const wordEnd = drawWord(og, 'ETCH', 96, wordTop, 128, INK);
+
+  // A full stop in the accent colour, echoing the hero's coloured emphasis.
+  fillRect(og, wordEnd + 20, wordTop + 128 - 30, 30, 30, ACCENT);
+
+  // The payload palette, one square per colour.
+  HUES.forEach((hue, i) => fillRect(og, 96 + i * 56, wordTop + 198, 40, 40, hue));
+
+  // No stand-in bars for the strapline. Grey rules at text size read as content
+  // that failed to load, which is the opposite of the impression this image has
+  // to make, and the description is already shown as real text beside it by
+  // every client that renders the card.
 
   await writeFile(join(publicDir, 'og.png'), encodePng(og.data, W, H));
   console.log(`og.png written (1200x630, code version ${result.version}, verified)`);
